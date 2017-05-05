@@ -1,0 +1,211 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of filterresponses</title>
+  <meta name="keywords" content="filterresponses">
+  <meta name="description" content="%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; filterresponses.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>filterresponses
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function model = filterresponses(model, pyra, latent, bbox, overlap) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ compute all filter responses (filter score pyramids)
+ model    object model
+ pyra     feature pyramid
+ latent   true =&gt; latent positive detection mode
+ bbox     ground truth bbox
+ overlap  overlap threshold</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function o = computeoverlap(bbox, fdimy, fdimx, dimy, dimx, scale, pyra)</a></li><li><a href="#_sub2" class="code">function ok = testoverlap(level, model, pyra, bbox, overlap)</a></li><li><a href="#_sub3" class="code">function [model, levels] = validatelevels(model, pyra, latent, bbox, overlap)</a></li></ul>
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0002 <span class="comment">% compute all filter responses (filter score pyramids)</span>
+0003 <a name="_sub0" href="#_subfunctions" class="code">function model = filterresponses(model, pyra, latent, bbox, overlap)</a>
+0004 <span class="comment">% model    object model</span>
+0005 <span class="comment">% pyra     feature pyramid</span>
+0006 <span class="comment">% latent   true =&gt; latent positive detection mode</span>
+0007 <span class="comment">% bbox     ground truth bbox</span>
+0008 <span class="comment">% overlap  overlap threshold</span>
+0009 
+0010 <span class="comment">% gather filters for computing match quality responses</span>
+0011 i = 1;
+0012 filters = {};
+0013 filter_to_symbol = [];
+0014 <span class="keyword">for</span> s = model.symbols
+0015   <span class="keyword">if</span> s.type == <span class="string">'T'</span>
+0016     filters{i} = model.filters(s.filter).w;
+0017     filter_to_symbol(i) = s.i;
+0018     i = i + 1;
+0019   <span class="keyword">end</span>
+0020 <span class="keyword">end</span>
+0021 
+0022 <span class="comment">% determine which levels to compute responses for (optimization</span>
+0023 <span class="comment">% for the latent=true case)</span>
+0024 [model, levels] = <a href="#_sub3" class="code" title="subfunction [model, levels] = validatelevels(model, pyra, latent, bbox, overlap)">validatelevels</a>(model, pyra, latent, bbox, overlap);
+0025 
+0026 <span class="keyword">for</span> level = levels
+0027   <span class="comment">% compute filter response for all filters at this level</span>
+0028   r = fconv(pyra.feat{level}, filters, 1, length(filters));
+0029   <span class="comment">% find max response array size for this level</span>
+0030   s = [-inf -inf];
+0031   <span class="keyword">for</span> i = 1:length(r)
+0032     s = max([s; size(r{i})]);
+0033   <span class="keyword">end</span>
+0034   <span class="comment">% set filter response as the score for each filter terminal</span>
+0035   <span class="keyword">for</span> i = 1:length(r)
+0036     <span class="comment">% normalize response array size so all responses at this</span>
+0037     <span class="comment">% level have the same dimension</span>
+0038     spady = s(1) - size(r{i},1);
+0039     spadx = s(2) - size(r{i},2);
+0040     r{i} = padarray(r{i}, [spady spadx], -inf, <span class="string">'post'</span>);
+0041     model.symbols(filter_to_symbol(i)).score{level} = r{i};
+0042   <span class="keyword">end</span>
+0043   model.scoretpt{level} = zeros(s);
+0044 <span class="keyword">end</span>
+0045 
+0046 
+0047 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0048 <span class="comment">% compute the overlap between bounding box and a filter at</span>
+0049 <span class="comment">% each filter placement in a feature map.</span>
+0050 <a name="_sub1" href="#_subfunctions" class="code">function o = computeoverlap(bbox, fdimy, fdimx, dimy, dimx, scale, pyra)</a>
+0051 <span class="comment">% bbox   bounding box image coordinates [x1 y1 x2 y2]</span>
+0052 <span class="comment">% fdimy  number of rows in filter</span>
+0053 <span class="comment">% fdimx  number of cols in filter</span>
+0054 <span class="comment">% dimy   number of rows in feature map</span>
+0055 <span class="comment">% dimx   number of cols in feature map</span>
+0056 <span class="comment">% scale  image scale the feature map was computed at</span>
+0057 <span class="comment">% padx   x padding added to feature map</span>
+0058 <span class="comment">% pady   y padding added to feature map</span>
+0059 
+0060 padx = pyra.padx;
+0061 pady = pyra.pady;
+0062 imsize = pyra.imsize;
+0063 imarea = imsize(1)*imsize(2);
+0064 bboxarea = (bbox(3)-bbox(1)+1)*(bbox(4)-bbox(2)+1);
+0065 
+0066 <span class="comment">% corners for each placement of the filter (in image coordinates)</span>
+0067 x1 = ([1:dimx] - padx - 1) * scale + 1;
+0068 y1 = ([1:dimy] - pady - 1) * scale + 1;
+0069 x2 = x1 + fdimx*scale - 1;
+0070 y2 = y1 + fdimy*scale - 1;
+0071 <span class="keyword">if</span> bboxarea / imarea &lt; 0.7
+0072   <span class="comment">% clip detection window to image boundary only if</span>
+0073   <span class="comment">% the bbox is less than 70% of the image area</span>
+0074   x1 = min(max(x1, 1), imsize(2));
+0075   y1 = min(max(y1, 1), imsize(1));
+0076   x2 = max(min(x2, imsize(2)), 1);
+0077   y2 = max(min(y2, imsize(1)), 1);
+0078 <span class="keyword">end</span>
+0079 <span class="comment">% intersection of the filter with the bounding box</span>
+0080 xx1 = max(x1, bbox(1));
+0081 yy1 = max(y1, bbox(2));
+0082 xx2 = min(x2, bbox(3));
+0083 yy2 = min(y2, bbox(4));
+0084 
+0085 <span class="comment">% e.g., [x1(:) y1(:)] == every upper-left corner</span>
+0086 [x1 y1] = meshgrid(x1, y1);
+0087 [x2 y2] = meshgrid(x2, y2);
+0088 [xx1 yy1] = meshgrid(xx1, yy1);
+0089 [xx2 yy2] = meshgrid(xx2, yy2);
+0090 <span class="comment">% compute width and height of every intersection box</span>
+0091 w = xx2(:)-xx1(:)+1;
+0092 h = yy2(:)-yy1(:)+1;
+0093 inter = w.*h;
+0094 <span class="comment">% a = area of (possibly clipped) detection windows</span>
+0095 a = (x2(:)-x1(:)+1) .* (y2(:)-y1(:)+1);
+0096 <span class="comment">% b = area of bbox</span>
+0097 b = (bbox(3)-bbox(1)+1) * (bbox(4)-bbox(2)+1);
+0098 <span class="comment">% intersection over union overlap</span>
+0099 o = inter ./ (a+b-inter);
+0100 <span class="comment">% set invalid entries to 0 overlap</span>
+0101 o(w &lt;= 0) = 0;
+0102 o(h &lt;= 0) = 0;
+0103 
+0104 
+0105 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0106 <span class="comment">% ok=true if any detection window has sufficient overlap at level</span>
+0107 <span class="comment">% ok=false otherwise</span>
+0108 <a name="_sub2" href="#_subfunctions" class="code">function ok = testoverlap(level, model, pyra, bbox, overlap)</a>
+0109 <span class="comment">% level    pyramid level</span>
+0110 <span class="comment">% model    object model</span>
+0111 <span class="comment">% pyra     feature pyramid</span>
+0112 <span class="comment">% bbox     ground truth bbox</span>
+0113 <span class="comment">% overlap  overlap threshold</span>
+0114 
+0115 ok = false;
+0116 scale = model.sbin/pyra.scales(level);
+0117 <span class="keyword">for</span> r = 1:length(model.rules{model.start})
+0118   detwin = model.rules{model.start}(r).detwindow;
+0119   o = <a href="#_sub1" class="code" title="subfunction o = computeoverlap(bbox, fdimy, fdimx, dimy, dimx, scale, pyra)">computeoverlap</a>(bbox, detwin(1), detwin(2), <span class="keyword">...</span>
+0120                      size(pyra.feat{level},1), <span class="keyword">...</span>
+0121                      size(pyra.feat{level},2), <span class="keyword">...</span>
+0122                      scale, pyra);
+0123   inds = find(o &gt;= overlap);
+0124   <span class="keyword">if</span> ~isempty(inds)
+0125     ok = true;
+0126     <span class="keyword">break</span>;
+0127   <span class="keyword">end</span>
+0128 <span class="keyword">end</span>
+0129 
+0130 
+0131 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0132 <span class="comment">% returns all levels if latent is false</span>
+0133 <span class="comment">% otherwise, only returns the levels that we can actual use</span>
+0134 <span class="comment">% for latent detections</span>
+0135 <a name="_sub3" href="#_subfunctions" class="code">function [model, levels] = validatelevels(model, pyra, latent, bbox, overlap)</a>
+0136 <span class="comment">% model    object model</span>
+0137 <span class="comment">% pyra     feature pyramid</span>
+0138 <span class="comment">% latent   true =&gt; latent positive detection mode</span>
+0139 <span class="comment">% bbox     ground truth bbox</span>
+0140 <span class="comment">% overlap  overlap threshold</span>
+0141 
+0142 <span class="keyword">if</span> ~latent
+0143   levels = 1:length(pyra.feat);
+0144 <span class="keyword">else</span>
+0145   levels = [];
+0146   <span class="keyword">for</span> l = model.interval+1:length(pyra.feat)
+0147     <span class="keyword">if</span> ~<a href="#_sub2" class="code" title="subfunction ok = testoverlap(level, model, pyra, bbox, overlap)">testoverlap</a>(l, model, pyra, bbox, overlap)
+0148       <span class="comment">% no overlap at level l</span>
+0149       <span class="keyword">for</span> i = 1:model.numfilters
+0150         model.symbols(model.filters(i).symbol).score{l} = -inf;
+0151         model.scoretpt{l} = 0;
+0152       <span class="keyword">end</span>
+0153     <span class="keyword">else</span>
+0154       levels = [levels l l-model.interval];
+0155     <span class="keyword">end</span>
+0156   <span class="keyword">end</span>
+0157 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:01:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

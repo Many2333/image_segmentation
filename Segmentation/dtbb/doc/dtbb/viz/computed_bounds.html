@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of computed_bounds</title>
+  <meta name="keywords" content="computed_bounds">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../menu.html">Home</a> &gt;  <a href="../menu.html">dtbb</a> &gt; <a href="menu.html">viz</a> &gt; computed_bounds.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../menu.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb/viz&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>computed_bounds
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function [im,node_map]= computed_bounds(mxt_best,scl_best,gr,tr,offsets,sz,lwt) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="../../dtbb/demo_all.html" class="code" title="">demo_all</a>	maxNumCompThreads(1);</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function [range_v,range_h,range] = get_bbox(gr,idx,pd);</a></li></ul>
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [im,node_map]= computed_bounds(mxt_best,scl_best,gr,tr,offsets,sz,lwt)</a>
+0002 
+0003 <span class="keyword">if</span> isempty(mxt_best),
+0004     <span class="comment">%% mixture and scale indexes for the 1st-best detection</span>
+0005     mxt_best    = tr(4,end);
+0006     scl_best    = tr(3,end);
+0007 <span class="keyword">end</span>
+0008 
+0009 parents = tr(1,:);
+0010 scales  = tr(3,:);
+0011 mxts    = tr(4,:);
+0012 
+0013 child_1 = tr(5,:);
+0014 child_2 = tr(6,:);
+0015 
+0016 cost_1 = tr(7,:);
+0017 cost_2 = tr(8,:);
+0018 
+0019 wt      = find((mxts==mxt_best)&amp;(scl_best==scales));
+0020 leaf    = find(sum(gr.ranges,1)==0); 
+0021 
+0022 offv = offsets(1);
+0023 offh = offsets(2);
+0024 pd = [offh-1;offv-1];
+0025 
+0026 im      = 10*ones(max(gr.centers(2,leaf))+offv,max(gr.centers(1,leaf))+offh);
+0027 [sv,sh] = size(im);
+0028 
+0029 levels      = tree_levels(gr);
+0030 <span class="keyword">if</span> exist(<span class="string">'lwt'</span>,<span class="string">'var'</span>)
+0031     levs        = (levels==lwt);
+0032     in_level    = find(levs(child_1(wt)));
+0033     wt          = wt(in_level);
+0034     node_map    = ones(size(im));
+0035     
+0036 <span class="keyword">end</span>
+0037     
+0038 <span class="keyword">for</span> k=1:length(wt),
+0039     idx = wt(k);
+0040     [range_v,range_h,range] = <a href="#_sub1" class="code" title="subfunction [range_v,range_h,range] = get_bbox(gr,idx,pd);">get_bbox</a>(gr,child_1(idx),pd);
+0041    
+0042     <span class="comment">%% by default the code uses the costs of the children intervals</span>
+0043     <span class="comment">%% but if the children is identical to the parent, it means we heat</span>
+0044     <span class="comment">%% a leaf node in the domain kd-tree, and kept repeating the bound computation</span>
+0045     <span class="comment">%% at the same leaf, until the source intervals became also leaves</span>
+0046     <span class="comment">%% (earlier they were intervals, resulting in a discrepancy between the</span>
+0047     <span class="comment">%% lower and upper bounds)</span>
+0048     
+0049     <span class="keyword">if</span> child_1(idx)==parents(idx),
+0050         cost_1(idx) = tr(2,idx);
+0051     <span class="keyword">end</span>
+0052     <span class="keyword">if</span> child_2(idx)==parents(idx),
+0053         cost_2(idx) = tr(2,idx);
+0054     <span class="keyword">end</span>
+0055     
+0056     range_v = min(max(range_v,1),sv);
+0057     range_h = min(max(range_h,1),sh);
+0058     
+0059     im(range_v,range_h) = min(im(range_v,range_h),cost_1(idx));
+0060     
+0061     node_map(range_v,range_h) = idx;
+0062     
+0063     <span class="keyword">if</span> (child_2(idx)&gt;0)
+0064         [range_v,range_h,range]   = <a href="#_sub1" class="code" title="subfunction [range_v,range_h,range] = get_bbox(gr,idx,pd);">get_bbox</a>(gr,child_2(idx),pd);
+0065        
+0066         range_v = min(max(range_v,1),sv);
+0067         range_h = min(max(range_h,1),sh);
+0068         im(range_v,range_h) = min(im(range_v,range_h),cost_2(idx));
+0069     <span class="keyword">end</span>
+0070 <span class="keyword">end</span>
+0071 im = im(1:min(sz(1),end),1:min(sz(2),end));
+0072 
+0073 
+0074 <a name="_sub1" href="#_subfunctions" class="code">function [range_v,range_h,range] = get_bbox(gr,idx,pd);</a>
+0075 cen_cur = gr.centers(:,idx)+1 + pd;
+0076 range   = gr.ranges(:, idx);
+0077 
+0078 range_h = [floor(cen_cur(1) - range(1)):ceil(cen_cur(1) + range(1))];
+0079 range_v = [floor(cen_cur(2) - range(2)):ceil(cen_cur(2) + range(2))];</pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:08:12 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

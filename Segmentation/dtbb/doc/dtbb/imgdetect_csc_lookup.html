@@ -1,0 +1,70 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of imgdetect_csc_lookup</title>
+  <meta name="keywords" content="imgdetect_csc_lookup">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; imgdetect_csc_lookup.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>imgdetect_csc_lookup
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [times_c,dets,boxes] = imgdetect_csc_lookup(im,object_model,thrs,f_errs) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="imgdetect_csc_lu.html" class="code" title="function [t,dets,boxes] = imgdetect_csc_lu(object_model,thrs,fct_err,pyra)">imgdetect_csc_lu</a>	</li><li><a href="quantizepyramid.html" class="code" title="function [pyra] = quantizepyramid(pyra,vocab,do_approx,nrm_hog)">quantizepyramid</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [times_c,dets,boxes] = imgdetect_csc_lookup(im,object_model,thrs,f_errs)</a>
+0002 tic;
+0003 pyra            = featpyramid(im, object_model.model);
+0004 pyra            = <a href="quantizepyramid.html" class="code" title="function [pyra] = quantizepyramid(pyra,vocab,do_approx,nrm_hog)">quantizepyramid</a>(pyra,object_model.vocab,0,0);
+0005 times(1) = toc;
+0006 thrsc = object_model.thrsc;
+0007 <span class="keyword">for</span> f_ind = 1:length(f_errs)
+0008     times_c{f_ind} = times(1);
+0009     fct_err = f_errs(f_ind);
+0010     <span class="keyword">for</span> ind = 1:length(thrs),
+0011         thr   = thrs(ind);
+0012         t_ind = find(object_model.thresh ==thr);
+0013         thrs_in  = thrsc{t_ind};
+0014         [t,d,b] = <a href="imgdetect_csc_lu.html" class="code" title="function [t,dets,boxes] = imgdetect_csc_lu(object_model,thrs,fct_err,pyra)">imgdetect_csc_lu</a>(object_model,thrs_in,fct_err,pyra);
+0015         dets{f_ind,t_ind}  = d;
+0016         boxes{f_ind,t_ind} = b;
+0017         times_c{f_ind} = [times_c{f_ind},t];
+0018     <span class="keyword">end</span>
+0019 <span class="keyword">end</span>
+0020 
+0021 <span class="keyword">if</span> ((length(f_errs)*length(thrs))==1)
+0022     dets = dets{1,1};
+0023     boxes = boxes{1,1};
+0024 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:08:12 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of make_dtbb</title>
+  <meta name="keywords" content="make_dtbb">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; make_dtbb.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>make_dtbb
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="../dtbb/cpp/dense_def_script.html" class="code" title="">dense_def_script</a>	%</li><li><a href="../dtbb/cpp/sparse_def_script.html" class="code" title="">sparse_def_script</a>	%</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 startdir = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0002 
+0003 opt = 1;
+0004 <span class="keyword">if</span> opt
+0005     optstring = <span class="string">' -O'</span>;
+0006     <span class="keyword">if</span> ~ispc
+0007         optstring = [optstring <span class="string">' CXXOPTIMFLAGS=&quot;-O3 -DNDEBUG&quot;'</span>];
+0008         optstring = [optstring <span class="string">' LDOPTIMFLAGS=&quot;-O3&quot;'</span>];
+0009     <span class="keyword">end</span>
+0010 <span class="keyword">else</span>
+0011     optstring = <span class="string">' -g'</span>;
+0012 <span class="keyword">end</span>
+0013 
+0014 <span class="keyword">if</span> ~ispc
+0015     <span class="comment">% Turn all warnings on</span>
+0016     optstringw = [optstring  <span class="string">' CXXFLAGS=&quot;\$CXXFLAGS -Wall&quot;'</span>];
+0017     optstringw = [optstringw <span class="string">' LDFLAGS=&quot;\$LDFLAGS -Wall&quot;'</span>];
+0018 <span class="keyword">end</span>
+0019 
+0020 
+0021 <span class="comment">%% compile the original code for HOG features, convolution, GDT</span>
+0022 cd(fullfile(startdir,<span class="string">'voc-release4'</span>))
+0023 mexcmd  = [<span class="string">'mex'</span>,optstringw];
+0024 eval([mexcmd,<span class="string">' dt.cc'</span>])
+0025 eval([mexcmd,<span class="string">' features.cc'</span>])
+0026 eval([mexcmd,<span class="string">' resize.cc'</span>])
+0027 eval([mexcmd,<span class="string">' getdetections.cc'</span>])
+0028 eval([mexcmd,<span class="string">' fconv.cc'</span>]);
+0029 eval([mexcmd,<span class="string">' fconvsse.cc'</span>]);
+0030 
+0031 <span class="keyword">if</span> 0
+0032     <span class="comment">%% cascade code</span>
+0033     mexcmd = <span class="string">'mex -outdir ../mex'</span>;
+0034     mexcmd = [mexcmd <span class="string">''</span>];
+0035     mexcmd = [mexcmd <span class="string">' '</span>];
+0036     mexcmd = [mexcmd <span class="string">' star-cascade/cascade.cc star-cascade/model.cc'</span>];
+0037     eval(mexcmd);
+0038 <span class="keyword">end</span>
+0039 
+0040 <span class="comment">%% DTBB/Lookup binaries</span>
+0041 mexcmd  = [<span class="string">'mex -outdir ../mex'</span>,optstring];
+0042 
+0043 <span class="comment">%% compile code for KD-Trees &amp; BB/CD</span>
+0044 cd(fullfile(startdir,<span class="string">'cpp'</span>));
+0045 
+0046 eval([mexcmd,<span class="string">' mex_kdtree.cpp    KdTree.cpp'</span>])
+0047 eval([mexcmd,<span class="string">' mex_multitree.cpp KdTree.cpp MultiTree.cpp'</span>]);
+0048 eval([mexcmd,<span class="string">' mex_traverse.cpp  KdTree.cpp MultiTree.cpp'</span>]);
+0049 
+0050 mexcmd  = [<span class="string">'mex '</span>,optstring];
+0051 <span class="comment">%% unary terms</span>
+0052 <a href="../dtbb/cpp/dense_def_script.html" class="code" title="">dense_def_script</a>
+0053 pwd_old = pwd;
+0054 <span class="keyword">for</span> rt = [4:16],
+0055     nb = 8;
+0056     fexec = sprintf(<span class="string">' -DNH%i -DNB%i dense_lookup.cpp -output fast_%ibit_%i'</span>,rt,nb,nb,rt);
+0057     eval([mexcmd,fexec]);
+0058     fprintf(2,<span class="string">'.'</span>);
+0059 <span class="keyword">end</span>
+0060 
+0061 fprintf(2,<span class="string">'\n'</span>);
+0062 <span class="comment">%% cascade-only: lookup at prescribed coordinates</span>
+0063 <a href="../dtbb/cpp/sparse_def_script.html" class="code" title="">sparse_def_script</a>
+0064 eval([mexcmd,<span class="string">' sparse_lookup.cpp'</span>]);
+0065 
+0066 cd(startdir)</pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:11:51 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

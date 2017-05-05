@@ -1,0 +1,6 @@
+/* Created by mdot for Matlab */
+digraph m2html {
+
+  dense_def_script [URL="dense_def_script.html"];
+  sparse_def_script [URL="sparse_def_script.html"];
+}

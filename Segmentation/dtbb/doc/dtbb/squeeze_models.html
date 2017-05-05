@@ -1,0 +1,397 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of squeeze_models</title>
+  <meta name="keywords" content="squeeze_models">
+  <meta name="description" content="[subms,filters,model_out] = squeeze_models(modelc)">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; squeeze_models.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>squeeze_models
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>[subms,filters,model_out] = squeeze_models(modelc)</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [subms,filters_out,model_out] = squeeze_models_full(modelc,vocab) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">[subms,filters,model_out] = squeeze_models(modelc)
+ squeezes together multiple object category models and distills
+ information used in BB optimization.
+
+ Input: modelc: cell of object category models)
+ Output:
+ subms: an array of structures corresponding to the different model components
+            e.g. for a single-element modelc - one category, this will
+            have 6 elements for the object-specific mixtures
+            for a 20-element modelc this will have 120 elements
+
+ filters_out:  contains all the root and all the part filters (.allr, .allp fields)
+ model_out:    contains some useful info for constructing a common feature pyramid
+
+ Copyright (C) 2012 Iasonas Kokkinos
+ available under the terms of the GNU GPLv2</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="../dtbb/util/compress_structure.html" class="code" title="">compress_structure</a>	</li><li><a href="../dtbb/util/my_meshgrid.html" class="code" title="function [xx,yy,s] = my_meshgrid(x,y)">my_meshgrid</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="model_for_ubb.html" class="code" title="function [object_model,models_cell,csc_model_true] = model_for_ubb(obj_id,nw,thrs_in,nrm_hog)">model_for_ubb</a>	</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function [weight,sz,nr2,inpr] = post_process(in,vocab)</a></li><li><a href="#_sub2" class="code">function [w,f,symb] = get_Terminal(symbols,filters,rules,Terminal)</a></li><li><a href="#_sub3" class="code">function x = pow_2(x)</a></li></ul>
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [subms,filters_out,model_out] = squeeze_models_full(modelc,vocab)</a>
+0002 <span class="comment">%[subms,filters,model_out] = squeeze_models(modelc)</span>
+0003 <span class="comment">% squeezes together multiple object category models and distills</span>
+0004 <span class="comment">% information used in BB optimization.</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% Input: modelc: cell of object category models)</span>
+0007 <span class="comment">% Output:</span>
+0008 <span class="comment">% subms: an array of structures corresponding to the different model components</span>
+0009 <span class="comment">%            e.g. for a single-element modelc - one category, this will</span>
+0010 <span class="comment">%            have 6 elements for the object-specific mixtures</span>
+0011 <span class="comment">%            for a 20-element modelc this will have 120 elements</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% filters_out:  contains all the root and all the part filters (.allr, .allp fields)</span>
+0014 <span class="comment">% model_out:    contains some useful info for constructing a common feature pyramid</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% Copyright (C) 2012 Iasonas Kokkinos</span>
+0017 <span class="comment">% available under the terms of the GNU GPLv2</span>
+0018 
+0019 
+0020 cnt = 0;
+0021 mxs = 0;
+0022 <span class="keyword">for</span> md = 1:length(modelc)
+0023     model = modelc{md};
+0024     
+0025     name    = model.class;
+0026     symbols = model.symbols;
+0027     filters = model.filters;
+0028     rules   = model.rules;
+0029     model_out.interval = model.interval;
+0030     rules_generating_object = rules{model.start};
+0031     nmixtures = length(rules_generating_object);
+0032     
+0033     <span class="keyword">if</span> (nargin==1), vocab = [];  <span class="keyword">end</span>
+0034     mxts = [1:nmixtures];
+0035     <span class="keyword">for</span> mixture_ind = mxts,
+0036         cnt              = cnt+1;
+0037         mixture          = rules_generating_object(mixture_ind);
+0038         symbols_combined = mixture.rhs; sms = symbols_combined;
+0039         anchors          = mixture.anchor;
+0040         sw               = mixture.detwindow;
+0041         root_mixt        = symbols_combined(1);
+0042         [root_w,f,s]     = <a href="#_sub2" class="code" title="subfunction [w,f,symb] = get_Terminal(symbols,filters,rules,Terminal)">get_Terminal</a>(symbols,filters,rules,root_mixt);
+0043         fs(1)  = f;
+0044         
+0045         pidx    = symbols_combined(1);
+0046         def     = rules{pidx}.def.w;
+0047         sch     = -1/sqrt(2*def(1));      scv = -1/sqrt(2*def(3));
+0048         sigmas  = [sch,scv];
+0049         bandwidth = single(<a href="#_sub3" class="code" title="subfunction x = pow_2(x)">pow_2</a>(sigmas/(2)));
+0050         
+0051         relations(1).offsets = [0,0];
+0052         relations(1).bandwidth  = bandwidth;
+0053         n_parts = length(symbols_combined)-1;
+0054         
+0055         idx_box{1} = (mixture_ind-1)*4 + [1:4];
+0056         
+0057         <span class="keyword">for</span> pi = 1 + [1:n_parts];
+0058             pidx            = symbols_combined(pi);
+0059             [w,f]           = <a href="#_sub2" class="code" title="subfunction [w,f,symb] = get_Terminal(symbols,filters,rules,Terminal)">get_Terminal</a>(symbols,filters,rules,pidx);
+0060             part_w{pi-1}    = w;
+0061             filt            = filters(f);
+0062             fs(pi)          = f;
+0063             
+0064             def  = rules{pidx}.def.w;
+0065             part_d(pi-1,:)     = def;
+0066             vecoff(pi-1,[1,2]) = anchors{pi}([1,2]);
+0067             
+0068             <span class="comment">%% dt- potential:  def(1) h^2 + def(2) h + def(3) * v^2 + def(4) *v</span>
+0069             <span class="comment">%% gaussian potential:   (h - mh)^2/(2*sch^2) + (v-mv)^2/(2*scv^2)</span>
+0070             
+0071             <span class="comment">%% max of dt-potential -&gt; set h = -mh, v = -mv and get:</span>
+0072             max_dt(pi) =  (- def(2)^2/(4*def(1))) + ( - def(4)^2/(4*def(3)));
+0073             <span class="comment">%% as the gaussian potential used in BB has max 0, we need</span>
+0074             <span class="comment">%% to add this to the the DC of the svm to make different mixtures</span>
+0075             <span class="comment">%% commensurate</span>
+0076             
+0077             sch = -1/sqrt(2*def(1));     <span class="comment">%% sigma (h/v) corresponding to dt -based gaussian potential (defined in part coordinates)</span>
+0078             scv = -1/sqrt(2*def(3));
+0079             
+0080             mh =  -(def(2)/def(1))/2;     <span class="comment">%% mean (h/v) corresponding to dt -based gaussian potential (defined in part coordinates)</span>
+0081             mv =  -(def(4)/def(3))/2;
+0082             
+0083             mh  = mh - anchors{pi}(1);   <span class="comment">%% append this to the offset due to `anchor' field (again in part coordinates)</span>
+0084             mv  = mv - anchors{pi}(2);
+0085             
+0086             offset_0 = [mh,mv];
+0087             sigmas   = [sch,scv];
+0088             
+0089             <span class="comment">%% work in root coordinates -&gt; cut everything down by 2</span>
+0090             offset    = single(offset_0)/2;
+0091             bandwidth = single(<a href="#_sub3" class="code" title="subfunction x = pow_2(x)">pow_2</a>(sigmas/(2)));
+0092             
+0093             relations(pi).offset     = offset;
+0094             relations(pi).bandwidth  = bandwidth;
+0095             idx_box{pi} = nmixtures*4 + (pi-2)*4 + [1:4];
+0096         <span class="keyword">end</span>
+0097         
+0098         [sv,sh,d]  = size(root_w);
+0099         <span class="comment">%% 1) max root resolution: 1/2 of max part resolution</span>
+0100         <span class="comment">%% 2) HoG bin size used at finest pyramid level: 8/2</span>
+0101         <span class="comment">%% -&gt; min root granularity: (8/2)*2 = 8 pixels</span>
+0102         
+0103         svm_b  = mixture.offset.w - sum(max_dt);<span class="comment">%% used for DTBB</span>
+0104         svm_b0 = mixture.offset.w;                <span class="comment">%% used for cascade</span>
+0105         nmax = nmixtures*9*4;
+0106         fields_wt = {<span class="string">'md'</span>,<span class="string">'mixture_ind'</span>,<span class="string">'root_w'</span>,<span class="string">'part_w'</span>,<span class="string">'part_d'</span>,<span class="string">'svm_b'</span>,<span class="string">'svm_b0'</span>,<span class="string">'sw'</span>,<span class="string">'vecoff'</span>,<span class="string">'fs'</span>,<span class="string">'anchors'</span>,<span class="string">'sms'</span>,<span class="string">'n_parts'</span>,<span class="string">'relations'</span>,<span class="string">'idx_box'</span>,<span class="string">'nmax'</span>,<span class="string">'name'</span>};
+0107         <a href="../dtbb/util/compress_structure.html" class="code" title="">compress_structure</a>;
+0108         subms(cnt) = structure;
+0109     <span class="keyword">end</span>
+0110     mxs = max(mxs,modelc{md}.maxsize);
+0111 <span class="keyword">end</span>
+0112 
+0113 model_out.maxsize  = mxs;
+0114 model_out.interval = model.interval;
+0115 model_out.sbin     = 8;
+0116 nsubms  = length(subms);
+0117 
+0118 
+0119 cn = 0;
+0120 <span class="keyword">for</span> mixt = 1:nsubms
+0121     subm   = subms(mixt);
+0122     nparts = length(subm.part_w);
+0123     [weights_root{mixt},szs(:,mixt),en_root{mixt},<span class="keyword">...</span>
+0124         in_root{mixt}] = <a href="#_sub1" class="code" title="subfunction [weight,sz,nr2,inpr] = post_process(in,vocab)">post_process</a>(subm.root_w,vocab);
+0125     w_root{mixt} = single(permute(subm.root_w,[3,1,2]));
+0126     <span class="keyword">for</span> pt = 1:nparts
+0127         [weights_part{mixt}(pt,:),~,en_part{mixt}(pt,:),<span class="keyword">...</span>
+0128             in_part{mixt}(:,:,pt)] = <a href="#_sub1" class="code" title="subfunction [weight,sz,nr2,inpr] = post_process(in,vocab)">post_process</a>(subm.part_w{pt},vocab);
+0129         cn = cn +1;
+0130         w_part{cn} = single(permute(subm.part_w{pt},[3,1,2]));
+0131     <span class="keyword">end</span>
+0132 <span class="keyword">end</span>
+0133 
+0134 <span class="comment">%%</span>
+0135 <span class="comment">%% weights_part</span>
+0136 <span class="comment">%% cell{n_mixtures}</span>
+0137 <span class="comment">%% each cell:</span>
+0138 <span class="comment">%% (nparts)  X (nv_hog x nh_hog x 32) elements ( = 6 x 6 x 32 = 1152)</span>
+0139 
+0140 <span class="comment">%% in_part</span>
+0141 <span class="comment">%% cell{n_mixtures}</span>
+0142 <span class="comment">%% each cell:</span>
+0143 <span class="comment">%% (nwords) X  (nv_hog x nh_hog) X nparts</span>
+0144 
+0145 maxsize = max(szs,[],2);
+0146 pady    = maxsize(1);
+0147 padx    = maxsize(2);
+0148 <span class="comment">%% feature dimensionality</span>
+0149 nf    = size(subm.root_w,3);
+0150 <span class="comment">%% max index of root filter</span>
+0151 mxs   = padx*pady*nf;
+0152 nrmr = zeros(nsubms,prod(maxsize));
+0153 
+0154 <span class="comment">%% loop over root filters</span>
+0155 <span class="keyword">for</span> k=1:nsubms,
+0156     <span class="comment">%% root size</span>
+0157     sz_fil    = szs(:,k);
+0158     <span class="comment">%% find indexes for HOG-blocks in root template</span>
+0159     [grh,grv] = <a href="../dtbb/util/my_meshgrid.html" class="code" title="function [xx,yy,s] = my_meshgrid(x,y)">my_meshgrid</a>(0:sz_fil(2)-1,0:sz_fil(1)-1);
+0160     idxs      = grh*pady + grv+1;
+0161     
+0162     nrmr(k,idxs) = en_root{k};
+0163     <span class="comment">%% common-root dimension will be (padx,pady,nf)</span>
+0164     <span class="comment">%% where padx,pady are maxima over mixture dimensions</span>
+0165     <span class="comment">%% for every mixture, we fill in with weight vector values</span>
+0166     <span class="comment">%% wherever available, and leave at zero elsewhere</span>
+0167     idxs             = repmat(idxs',[1,nf]) + repmat([0:nf-1],[length(idxs),1])*padx*pady;
+0168     all_root(mxs,k)  = 0;
+0169     all_root(idxs,k) = weights_root{k};
+0170     sep_root{k}      = single(weights_root{k}(:));
+0171 <span class="keyword">end</span>
+0172 
+0173 <span class="comment">%% weights_part</span>
+0174 <span class="comment">%% cell{n_mixtures}</span>
+0175 <span class="comment">%% each cell:</span>
+0176 <span class="comment">%% (nparts)  X (nv_hog x nh_hog x 32) elements ( = 6 x 6 x 32 = 1152)</span>
+0177 
+0178 filters_out.allp  = single(cell2mat(weights_part(:))');
+0179 
+0180 <span class="comment">%% 1152 x 48 = (6 x 6 x 32)</span>
+0181 
+0182 <span class="comment">%%  all_root:</span>
+0183 <span class="comment">%% (nv_root x nh_root x 32) X (n_mixtures)</span>
+0184 filters_out.allr  = single(all_root);
+0185 
+0186 <span class="keyword">if</span> ~isempty(vocab),
+0187     nrmp = cell2mat(en_part(:));    
+0188     szp = size(in_part{1});
+0189     szl  = szp.*[1,1,length(in_part)];
+0190     szl  = szl([3,1,2]);
+0191     c = zeros(szl,<span class="string">'single'</span>);
+0192     <span class="comment">%% in_part</span>
+0193     <span class="comment">%% cell{n_mixtures}</span>
+0194     <span class="comment">%% each cell:</span>
+0195     <span class="comment">%% (nwords) X  (nv_hog x nh_hog) X nparts</span>
+0196     <span class="keyword">for</span> k=1:length(in_part),
+0197         permuted   = permute(in_part{k},[3,1,2]);
+0198         <span class="comment">%% nparts  x (nwords) X  (nv_hog x nh_hog)</span>
+0199         c((k-1)*szp(3) + [1:szp(3)],:,:) = permuted;
+0200         <span class="keyword">for</span> i = 1:size(permuted,1),
+0201             c_separate{(k-1)*szp(3) + i}  = permuted(i,:,:);
+0202             <span class="comment">%ep_separate{(k-1)*szp(3) + i} =</span>
+0203         <span class="keyword">end</span>
+0204     <span class="keyword">end</span>
+0205     spy = 6; spx = 6;
+0206     
+0207     <span class="comment">%% c:</span>
+0208     <span class="comment">%% (nparts x nmixt) X nwords X (nv_p x nh_p)</span>
+0209     
+0210     nmixt = length(in_root);
+0211     d = zeros(nmixt,szp(1),padx*pady);
+0212     nw = size(vocab,2);
+0213     mx_dims  = max(szs,[],2);
+0214     size_max = mx_dims(1);
+0215     <span class="keyword">for</span> k=1:nmixt,
+0216         <span class="comment">%% root size</span>
+0217         sz_fil    = szs(:,k);
+0218         st = size_max - (sz_fil(1));
+0219         <span class="comment">%% find indexes for HOG-blocks in root template</span>
+0220         [grh,grv] = <a href="../dtbb/util/my_meshgrid.html" class="code" title="function [xx,yy,s] = my_meshgrid(x,y)">my_meshgrid</a>([0:sz_fil(2)-1],st+[0:sz_fil(1)-1]);
+0221         idxs      = grh*pady + grv+1;
+0222         <span class="comment">%% 1 (mixture)  x (nwords) X  (nv_hog x nh_hog)</span>
+0223         d(k,:,idxs)        = permute(in_root{k},[3,1,2]);
+0224         d_separate{k}(1,:,:)    = in_root{k};
+0225     <span class="keyword">end</span>
+0226    
+0227     <span class="comment">%% d:</span>
+0228     <span class="comment">%% (1 x nmixt) X nwords X (nv_r x nh_r)</span>
+0229     
+0230     sd = size(d);
+0231     sc = size(c);
+0232     <span class="comment">%example sc: [960, 256, 36]</span>
+0233     <span class="keyword">if</span> 1==1,
+0234         permuted =  permute(c,[1,3,2]);
+0235         <span class="comment">% (nparts x nmixt) X (nv_p x nh_p) X nwords</span>
+0236         <span class="comment">% [960,    36, 256]</span>
+0237         
+0238         reshaped = reshape(permuted,[sc(1)*spy,   spx,   nw]);
+0239         <span class="comment">% (nparts x nmixt x nv_p) X nh_p X nwords</span>
+0240         <span class="comment">% [960 x 6, 6, 256]</span>
+0241         
+0242         c = permute(reshaped,[1,3,2]);
+0243         <span class="comment">% (nparts x nmixt x nv_p) X nwords X nh_p</span>
+0244         <span class="comment">% [960 x 6, 256, 6]</span>
+0245 
+0246         <span class="comment">%% same thing</span>
+0247         d = permute(reshape(permute(d,[1,3,2]),[sd(1)*pady,padx,nw]),[1,3,2]);
+0248         
+0249     <span class="keyword">end</span>
+0250     <span class="keyword">for</span> k=1:length(d_separate),
+0251         d_sep{k} = permute(reshape(permute(d_separate{k},[1,3,2]),[szs(1,k),szs(2,k),nw]),[1,3,2]);
+0252     <span class="keyword">end</span>
+0253     <span class="keyword">for</span> k =1:length(c_separate),
+0254         c_sep{k} = permute(reshape(permute(c_separate{k},[1,3,2]),[6 ,  6,   nw]),[1,3,2]);
+0255     <span class="keyword">end</span>
+0256     filters_out.scores_root          = single(d);
+0257     filters_out.scores_part          = single(c);
+0258     
+0259     <span class="keyword">for</span> k=1:length(en_root),
+0260         er_sep{k} = single(reshape(en_root{k},szs(:,k)'));
+0261     <span class="keyword">end</span>
+0262     cn  = 0;
+0263     <span class="keyword">for</span> p=1:length(en_part),
+0264         <span class="keyword">for</span> k = 1:size(en_part{p},1)
+0265             cn = cn  + 1;
+0266             ep_sep{cn} = single(reshape(en_part{p}(k,:),[6,6]));
+0267         <span class="keyword">end</span>
+0268     <span class="keyword">end</span>
+0269     filters_out.scores_root_separate =  d_sep;
+0270     filters_out.energy_root_separate = er_sep;
+0271     filters_out.scores_part_separate =  c_sep;
+0272     filters_out.energy_part_separate = ep_sep;
+0273     filters_out.sizes_root_separate  = szs;
+0274     filters_out.nrmr                 = single(nrmr);
+0275     filters_out.nrmp                 = single(nrmp);
+0276 <span class="keyword">end</span>
+0277 filters_out.maxsize = maxsize;
+0278 filters_out.w_part  = w_part;
+0279 filters_out.w_root  = w_root;
+0280 
+0281 <span class="comment">%% precomputed deformation costs (for cascade)</span>
+0282 [grh,grv] = meshgrid([-5:5],[-5:5]);
+0283 grh = -grh;
+0284 grv = -grv;
+0285 <span class="keyword">for</span> c = 1:length(subms)
+0286     <span class="keyword">for</span> part = 1:size(subms(c).part_d,1),
+0287         df          = subms(c).part_d(part,:);
+0288         sch         = -single(df(1)*grh.^2 + df(2)*grh);
+0289         scv         = -single(df(3)*grv.^2 + df(4)*grv);
+0290         subms(c).costs{part}       = sch(:) + scv(:);
+0291     <span class="keyword">end</span>
+0292 <span class="keyword">end</span>
+0293 
+0294 
+0295 <a name="_sub1" href="#_subfunctions" class="code">function [weight,sz,nr2,inpr] = post_process(in,vocab)</a>
+0296 <span class="comment">%% The returned weight is not permuted.</span>
+0297 <span class="comment">%% But we permute the norm of the weight elements</span>
+0298 <span class="comment">%% and their responses to the codebook entries</span>
+0299 <span class="comment">%% (it makes accessing them in batch mode possible with</span>
+0300 <span class="comment">%% fewer cache misses)</span>
+0301 [sv,sh,d]   = size(in);
+0302 weight      = reshape(in,[1,sv*sh*d])';
+0303 sz          = [sv,sh];
+0304 
+0305 in_lett = reshape(in(end:-1:1,:),[sv*sh,d]);
+0306 nr2     = squeeze(sum(in_lett.^2,2)/size(in_lett,2));
+0307 inpr     = [];
+0308 <span class="keyword">if</span> ~isempty(vocab),
+0309     inpr    = (in_lett*vocab)';
+0310 <span class="keyword">end</span>
+0311 
+0312 <a name="_sub2" href="#_subfunctions" class="code">function [w,f,symb] = get_Terminal(symbols,filters,rules,Terminal)</a>
+0313 symb    = rules{Terminal}.rhs;
+0314 f       = symbols(symb).filter;
+0315 w       = filters(f).w;
+0316 
+0317 <span class="comment">%% debugging leftovers: allows me to use block cells one-by-one</span>
+0318 <span class="keyword">if</span> 1==2
+0319     <span class="comment">%if size(w,2)&gt;8,</span>
+0320     <span class="comment">%    keep_h = [1:size(w,2)];</span>
+0321     <span class="comment">%else</span>
+0322     keep_h = 1;
+0323     keep_v = 1;
+0324     <span class="comment">%end</span>
+0325     <span class="comment">%keep_v = 1:size(w,1);</span>
+0326     w_keep =  w(keep_v,keep_h,:);
+0327     w = w*0;
+0328     w(keep_v,keep_h,:) = w_keep;
+0329 <span class="keyword">end</span>
+0330 
+0331 
+0332 <a name="_sub3" href="#_subfunctions" class="code">function x = pow_2(x)</a>
+0333 x = x.*x;
+0334</pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:11:51 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

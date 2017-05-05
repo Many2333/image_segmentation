@@ -1,0 +1,256 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of imgdetect_csc_lu</title>
+  <meta name="keywords" content="imgdetect_csc_lu">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; imgdetect_csc_lu.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>imgdetect_csc_lu
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [t,dets,boxes] = imgdetect_csc_lu(object_model,thrs,fct_err,pyra) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="fast_lookup_call.html" class="code" title="function [inpr,dst]  =fast_lookup_call(feat,t,Nv,Nh,h_s,h_e,v_s,v_e,d,e,Err)">fast_lookup_call</a>	do_fast = exist('Err');</li><li><a href="get_domain.html" class="code" title="function [h_s,h_e,v_s,v_e,grfh,grfv,ng,offset] = get_domain(pyra,feat,sz_filter)">get_domain</a>	</li><li><a href="get_domain_pts.html" class="code" title="function [grh,grv,sz0,sz2,idx] = get_domain_pts(h_s,h_e,v_s,v_e,feat);">get_domain_pts</a>	</li><li><a href="getfeats.html" class="code" title="function [blocks]  = getfeats(feats,idxs,grfh,grfv)">getfeats</a>	blocks  = getfeats(feats,idxs,grfh,grfv);</li><li><a href="sol2boxes_cascade.html" class="code" title="function [dets,boxes,is] = sol2boxes_cascade(object_ids,v,submodels,scales,xall,yall,nflip)">sol2boxes_cascade</a>	% turn the outputs of branch and bound into original DPM format</li><li><a href="../dtbb/util/expand_structure.html" class="code" title="">expand_structure</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="cascade_lup.html" class="code" title="function [times_c,dets,boxes] = cascade_lup(im,object_model,thrs,f_errs)">cascade_lup</a>	</li></ul>
+<!-- crossreference -->
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [t,dets,boxes] = imgdetect_csc_lu(object_model,thrs,fct_err,pyra)</a>
+0002 
+0003 structure       = object_model; <a href="../dtbb/util/expand_structure.html" class="code" title="">expand_structure</a>;
+0004 interval        = model.interval;
+0005 levels_wt       = (interval+1):length(pyra.feat);
+0006 
+0007 model_wanted     = 1;
+0008 component_wanted = 1:6;
+0009 level_wanted     = levels_wt;
+0010 
+0011 tic
+0012 sz_root_max             = max(object_model.sizes_root_separate,[],2);
+0013 xs_all = [];
+0014 ys_all = [];
+0015 vs_all = [];
+0016 id_all = [];
+0017 l_all  = [];
+0018 sols = [];
+0019 padx = pyra.padx;
+0020 pady = pyra.pady;
+0021 
+0022 <span class="keyword">for</span> level  = level_wanted,
+0023     i_root  = pyra.i{level};
+0024     i_part  = pyra.i{level - 10};
+0025     
+0026     d_root  = pyra.d{level};
+0027     d_part  = pyra.d{level - 10};
+0028     
+0029     f_root  = pyra.featp{level};
+0030     f_part  = pyra.featp{level- 10};
+0031     
+0032     sz_part = size(i_part);
+0033     sz_root = size(i_root);
+0034     
+0035     rnds    = [ones(1,9),2*ones(1,9)];
+0036     vals0   = zeros(9,prod(sz_part),<span class="string">'single'</span>);
+0037     
+0038     [hr_s,hr_e,vr_s,vr_e]   = <a href="get_domain.html" class="code" title="function [h_s,h_e,v_s,v_e,grfh,grfv,ng,offset] = get_domain(pyra,feat,sz_filter)">get_domain</a>(pyra,i_root,sz_root_max);
+0039     [hp_s,hp_e,vp_s,vp_e]   = <a href="get_domain.html" class="code" title="function [h_s,h_e,v_s,v_e,grfh,grfv,ng,offset] = get_domain(pyra,feat,sz_filter)">get_domain</a>(pyra,i_part,[6,6]);
+0040     
+0041     [siv,sih] = size(i_root);
+0042     <span class="comment">%[hs,vs]  = meshgrid_fast([1:sih],[1:siv]);</span>
+0043     
+0044     <span class="keyword">for</span> c = 6*(model_wanted-1) + component_wanted
+0045         sc_root_sep             = scores_root_separate{c};
+0046         sz_root_sep             = sizes_root_separate(:,c)';
+0047        
+0048         visit_order         = ords(c,:)+1;
+0049         thresholds          = thrs(c,2:2:end) - bs0(c);
+0050         thresholds_def      = thrs(c,3:2:end) - bs0(c);
+0051 
+0052         anchors             = submodels(c).anchors;
+0053         
+0054         cnt         = 1;
+0055         part        = visit_order(cnt)-1;
+0056         rnd         = rnds(cnt);
+0057         threshold   = thresholds(cnt);
+0058         
+0059         Nv                  = sz_root_sep(1);
+0060         Nh                  = sz_root_sep(2);
+0061         <span class="comment">%%---------------------------------------------------------</span>
+0062         <span class="comment">%% Root filter</span>
+0063         <span class="comment">%%---------------------------------------------------------</span>
+0064         <span class="comment">%% very first call: dense lookup everywhere</span>
+0065         <span class="keyword">if</span> (rnd==2)
+0066             <span class="comment">%% determine area of operation (in `memory' coordinates)</span>
+0067             feat_root =  pyra.feat{level};
+0068             [h_s,h_e,v_s,v_e,grfh,grfv,ng] = <a href="get_domain.html" class="code" title="function [h_s,h_e,v_s,v_e,grfh,grfv,ng,offset] = get_domain(pyra,feat,sz_filter)">get_domain</a>(pyra,feat_root,sz_root_max);
+0069             [grh,grv,sz0,sz2,idx]          = <a href="get_domain_pts.html" class="code" title="function [grh,grv,sz0,sz2,idx] = get_domain_pts(h_s,h_e,v_s,v_e,feat);">get_domain_pts</a>(h_s,h_e,v_s,v_e,feat_root);
+0070             t       = object_model.allr(:,c);
+0071             sv      = v_e - v_s + 1;
+0072             sh      = h_e - h_s + 1;
+0073             inpr    = reshape((<a href="getfeats.html" class="code" title="function [blocks]  = getfeats(feats,idxs,grfh,grfv)">getfeats</a>(feat_root,idx,grfh,grfv)*t)',[sv,sh]);
+0074         <span class="keyword">else</span>
+0075             en_root     = energy_root_separate{c};
+0076             [inpr,dst]  = <a href="fast_lookup_call.html" class="code" title="function [inpr,dst]  =fast_lookup_call(feat,t,Nv,Nh,h_s,h_e,v_s,v_e,d,e,Err)">fast_lookup_call</a>(i_root,sc_root_sep,Nv,Nh,hr_s,hr_e,vr_s,vr_e,d_root,en_root,fct_err);
+0077         <span class="keyword">end</span>
+0078         idxs                = find(inpr &gt; threshold);
+0079         vals                = inpr(idxs);
+0080         [v,h]               = ind2sub_fast(size(inpr),idxs);
+0081         <span class="keyword">if</span> isempty(v)
+0082             <span class="keyword">break</span>;
+0083         <span class="keyword">end</span>
+0084         
+0085         wt_now              = idxs;
+0086         
+0087         sv = vr_e - vr_s + 1; sh = hr_e - hr_s + 1;
+0088         vals0(1,wt_now)     = vals;
+0089         
+0090         <span class="keyword">for</span> cnt = 2:length(visit_order),
+0091             part        = visit_order(cnt)-1;
+0092             rnd         = rnds(cnt);
+0093             threshold   = thresholds(cnt);
+0094             
+0095             <span class="keyword">if</span> part&gt;0
+0096                 <span class="comment">%% Using the results from the current coarse level (l_c) we  want to</span>
+0097                 <span class="comment">%% guide the convolution at a finer level of the pyramid (l_f).</span>
+0098                 <span class="comment">%% Our reasoning about their positions is based on actual (image) coordinates,</span>
+0099                 <span class="comment">%% which we then translate into memory coordinates.</span>
+0100                 
+0101                 <span class="comment">%% An actual point [h,v] survives @l_c -&gt; a point [2*h, 2*v] @l_f</span>
+0102                 <span class="comment">%% We have an anchor giving us the nomimal displacement @l_f</span>
+0103                 <span class="comment">%% -&gt; point becomes [2*h + A_h, 2*v + A_j] @l_f</span>
+0104                 <span class="comment">%% -&gt; In memory coordinates: [2*h + A_h + pad_h, 2*v +A_v + pad_v]</span>
+0105                 <span class="comment">%%</span>
+0106                 <span class="comment">%% Just to save some more computation, we now express this in terms of</span>
+0107                 <span class="comment">%% SampledMemory coordinates @l_c: point [h_m,v_m] survives -&gt; transformations are</span>
+0108                 <span class="comment">%% [h,v] = [h_m -     Nh + 1,       v_m -  Nv + 1                   ]</span>
+0109                 <span class="comment">%% i.e. [1,1] -&gt; corresponds to Actual Point [ -Nh +1, -Nv + 1]</span>
+0110                 <span class="comment">%%</span>
+0111                 <span class="comment">%% [2*h_m -     2*(Nh + 1),         2*v_m - 2*(Nh + 1)              ]</span>
+0112                 <span class="comment">%% [2*h_m -     2*(Nh + 1) + A_h,   2*v_m - 2*(Nh + 1) + A_v        ]</span>
+0113                 <span class="comment">%% [2*h_m -2*(Nh + 1)+ pad_h + A_h, 2*v_m + pad_v - 2*(Nv + 1) + A_v]</span>
+0114                 
+0115                 pid         = part + (c-1)*8;
+0116                 costs       = submodels(c).costs{part};
+0117                 sclm        = 5;
+0118                 h2          = uint8(2*h + (- pyra.padx - 1 + anchors{part+1}(1)) -1 );
+0119                 v2          = uint8(2*v + (- pyra.pady - 1 + anchors{part+1}(2)) -1 );
+0120                 f_in        = f_part;
+0121                 w_in        = w_part{pid};
+0122                 en_part     = energy_part_separate{pid};
+0123                 
+0124                 left    = hp_s;
+0125                 right   = hp_e;
+0126                 up      = vp_s;
+0127                 down    = vp_e;
+0128             <span class="keyword">else</span>
+0129                 h2      = uint8(h-1)';
+0130                 v2      = uint8(v-1)';
+0131                 costs   = single(0);
+0132                 sclm    = 0;
+0133                 
+0134                 f_in    = f_root;
+0135                 w_in    = w_root{c};
+0136                 left    = hr_s;
+0137                 right   = hr_e;
+0138                 up      = vr_s;
+0139                 down    = vr_e;
+0140             <span class="keyword">end</span>
+0141            
+0142             thresh      = thresholds_def(cnt-1) - vals;
+0143             
+0144             do_lookup = (rnd==1);
+0145             <span class="keyword">if</span> do_lookup
+0146                 <span class="comment">%% lookup-based approximation</span>
+0147                 <span class="comment">%% code valid exclusively for parts, not for root filter</span>
+0148                 scores              = fast_joint_nboth(i_part,scp{pid}, sclm,v2,h2,left,right,up,down,costs,thresh,d_part,en_part,fct_err);
+0149             <span class="keyword">else</span>
+0150                 <span class="comment">%% evaluate HOG convolution</span>
+0151                 [scores,ix,iy]      = fast_joint_nboth(f_in,w_in,       sclm,v2,h2,left,right,up,down,costs,thresh);
+0152                 <span class="keyword">if</span> cnt==10
+0153                     xs      = zeros(length(ix),9);
+0154                     ys      = zeros(length(ix),9);
+0155                     xs(:,1) = ix - padx;
+0156                     ys(:,1) = iy - pady;
+0157                 <span class="keyword">else</span>
+0158                     xs(:,part+1) = ix - padx;
+0159                     ys(:,part+1) = iy - pady;
+0160                 <span class="keyword">end</span>
+0161             <span class="keyword">end</span>
+0162             
+0163             <span class="keyword">if</span> (cnt&gt;9)
+0164                 scs_p      = vals0(cnt-9,  wt_now)';
+0165                 vals       = vals + (scores  - scs_p);
+0166             <span class="keyword">else</span>
+0167                 vals      = vals   + scores;
+0168             <span class="keyword">end</span>
+0169             
+0170             <span class="comment">%% code for both root and parts</span>
+0171             wt         = find(vals&gt;threshold);
+0172             wt_now     = wt_now(wt);
+0173             v          = v(wt);
+0174             h          = h(wt);
+0175             vals       = vals(wt);
+0176             
+0177             <span class="keyword">if</span> isempty(v)
+0178                 <span class="keyword">break</span>;
+0179             <span class="keyword">end</span>
+0180             
+0181             <span class="keyword">if</span> (cnt&lt;=9)
+0182                 vals0(cnt,wt_now) = scores(wt);
+0183             <span class="keyword">else</span>
+0184                 xs = xs(wt,:);
+0185                 ys = ys(wt,:);
+0186             <span class="keyword">end</span>
+0187             <span class="keyword">if</span> isempty(v), <span class="keyword">break</span>; <span class="keyword">end</span>
+0188         <span class="keyword">end</span>
+0189         
+0190         <span class="keyword">if</span> ~isempty(v)
+0191             onz = ones(size(vals));
+0192             xs_all       = [xs_all;xs];
+0193             ys_all       = [ys_all;ys];
+0194             vs_all       = [vs_all;vals + bs0(c)];
+0195             id_all       = [id_all;repmat([model_wanted,level ,c],[length(onz),1])];
+0196         <span class="keyword">end</span>
+0197     <span class="keyword">end</span>
+0198 <span class="keyword">end</span>
+0199 
+0200 t = toc;
+0201 <span class="keyword">if</span> nargout&gt;1,
+0202     <span class="keyword">if</span> ~isempty(id_all)
+0203         scales = pyra.scales(interval+1:end);
+0204         [dets,boxes] = <a href="sol2boxes_cascade.html" class="code" title="function [dets,boxes,is] = sol2boxes_cascade(object_ids,v,submodels,scales,xall,yall,nflip)">sol2boxes_cascade</a>(id_all',vs_all,submodels,scales,xs_all,ys_all);
+0205        
+0206     <span class="keyword">else</span>
+0207         dets = [];
+0208         boxes = [];
+0209     <span class="keyword">end</span>
+0210 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:11:51 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

@@ -1,0 +1,13 @@
+This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012) (format=mex 2012.6.30)  11 OCT 2012 12:01
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**cascade CXXOPTIMFLAGS=-O3 -DNDEBUG -fomit-frame-pointer LDOPTIMFLAGS=-O3 CXXF
+LAGS=$CXXFLAGS -Wall LDFLAGS=$LDFLAGS -Wall cascade.cc model.cc
+
+! Emergency stop.
+<*> cascade 
+            CXXOPTIMFLAGS=-O3 -DNDEBUG -fomit-frame-pointer LDOPTIMFLAGS=-O3...
+End of file on the terminal!
+
+No pages of output.

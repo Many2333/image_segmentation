@@ -1,0 +1,155 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of dtbb</title>
+  <meta name="keywords" content="dtbb">
+  <meta name="description" content="[dets,boxes,is,times,tr,domain_kdtree] = dtbb(im,object_model,thr,nmax,fct_err)">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; dtbb.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>dtbb
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>[dets,boxes,is,times,tr,domain_kdtree] = dtbb(im,object_model,thr,nmax,fct_err)</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [dets,boxes,is,times,tr,domain_kdtree] = dtbb(im,object_model,thr,nmax,fct_err) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> [dets,boxes,is,times,tr,domain_kdtree] = dtbb(im,object_model,thr,nmax,fct_err)
+ fast object detection using dual-tree branch&amp;bound ; see demo_all.m for
+ usage
+ Inputs:
+ im:           input image 
+ object_model: data structure containing model information
+ thr:          no hypothesis below this threshold will be retrieved
+ nmax:         max # of detections. Set to negative value to get all
+ detections above threshold (cascaded detection is used for that). 
+ Set to integer number, k, to get at most k configurations (BB is used for
+ that). BB will stop if the upper bound of an interval is below thr
+ fct_err:      If defined, non-empty, and bounded means that we are
+               using a lookup-based approximation to compute the scores
+               (PnA 2012 paper). Set to sqrt(1/p_error)
+               
+
+ Outputs:
+ Detection data:
+ dets,boxes,is:    identical with the outputs of imgdetect (Felzenszwalb &amp; co)
+ Timing data
+ times:            (1): pyramid (2): unary (3): kdtrees (4:end): search
+ Display data:
+ tr:               keeps track of visited domain tree nodes,scores, etc 
+ domain_kdtree:    domain tree 
+ 
+ Copyright (C) 2012 Iasonas Kokkinos
+ available under the terms of the GNU GPLv2</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="quantizepyramid.html" class="code" title="function [pyra] = quantizepyramid(pyra,vocab,do_approx,nrm_hog)">quantizepyramid</a>	</li><li><a href="sol2boxes.html" class="code" title="function [dets,boxes,is] = sol2boxes(i,v,submodels,scales,nobjs,root_trees,part_trees,nflip)">sol2boxes</a>	% turn the outputs of branch and bound into original DPM format</li><li><a href="unary_wrapper.html" class="code" title="function [part_trees,root_trees,domain_kdtree,bs,times] = unary_wrapper(model,levels_wt,pyra,doa,interval,times,fct_err)">unary_wrapper</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="demo_all.html" class="code" title="">demo_all</a>	maxNumCompThreads(1);</li></ul>
+<!-- crossreference -->
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [dets,boxes,is,times,tr,domain_kdtree] = dtbb(im,object_model,thr,nmax,fct_err)</a>
+0002 <span class="comment">% [dets,boxes,is,times,tr,domain_kdtree] = dtbb(im,object_model,thr,nmax,fct_err)</span>
+0003 <span class="comment">% fast object detection using dual-tree branch&amp;bound ; see demo_all.m for</span>
+0004 <span class="comment">% usage</span>
+0005 <span class="comment">% Inputs:</span>
+0006 <span class="comment">% im:           input image</span>
+0007 <span class="comment">% object_model: data structure containing model information</span>
+0008 <span class="comment">% thr:          no hypothesis below this threshold will be retrieved</span>
+0009 <span class="comment">% nmax:         max # of detections. Set to negative value to get all</span>
+0010 <span class="comment">% detections above threshold (cascaded detection is used for that).</span>
+0011 <span class="comment">% Set to integer number, k, to get at most k configurations (BB is used for</span>
+0012 <span class="comment">% that). BB will stop if the upper bound of an interval is below thr</span>
+0013 <span class="comment">% fct_err:      If defined, non-empty, and bounded means that we are</span>
+0014 <span class="comment">%               using a lookup-based approximation to compute the scores</span>
+0015 <span class="comment">%               (PnA 2012 paper). Set to sqrt(1/p_error)</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% Outputs:</span>
+0019 <span class="comment">% Detection data:</span>
+0020 <span class="comment">% dets,boxes,is:    identical with the outputs of imgdetect (Felzenszwalb &amp; co)</span>
+0021 <span class="comment">% Timing data</span>
+0022 <span class="comment">% times:            (1): pyramid (2): unary (3): kdtrees (4:end): search</span>
+0023 <span class="comment">% Display data:</span>
+0024 <span class="comment">% tr:               keeps track of visited domain tree nodes,scores, etc</span>
+0025 <span class="comment">% domain_kdtree:    domain tree</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Copyright (C) 2012 Iasonas Kokkinos</span>
+0028 <span class="comment">% available under the terms of the GNU GPLv2</span>
+0029 
+0030 <span class="comment">%[submodels,filters,model0] = squeeze_models(models_cell);</span>
+0031 model0  = object_model.model;
+0032 times   = zeros(1,4);
+0033 tic;
+0034 [pyra]          = featpyramid(im,model0);
+0035 
+0036 interval        = model0.interval;
+0037 levels_wt       = [[interval+1]:length(pyra.feat)];
+0038 
+0039 <span class="comment">%%----------------------------------------------------------------------</span>
+0040 <span class="comment">%% get unary terms &amp; construct associated kd-trees</span>
+0041 <span class="comment">%%----------------------------------------------------------------------</span>
+0042 doa = exist(<span class="string">'fct_err'</span>,<span class="string">'var'</span>); 
+0043 <span class="keyword">if</span> doa, 
+0044     doa   = (~isempty(fct_err))&amp;(~isinf(fct_err));
+0045     <span class="keyword">if</span> doa
+0046         pyra = <a href="quantizepyramid.html" class="code" title="function [pyra] = quantizepyramid(pyra,vocab,do_approx,nrm_hog)">quantizepyramid</a>(pyra,object_model.vocab,0);
+0047     <span class="keyword">end</span>
+0048 <span class="keyword">else</span>
+0049     fct_err = [];
+0050 <span class="keyword">end</span> 
+0051 times(1)        = toc;
+0052 
+0053 [part_trees,root_trees,domain_kdtree,bs,times] = <a href="unary_wrapper.html" class="code" title="function [part_trees,root_trees,domain_kdtree,bs,times] = unary_wrapper(model,levels_wt,pyra,doa,interval,times,fct_err)">unary_wrapper</a>(object_model,levels_wt,pyra,doa,interval,times,fct_err);
+0054 
+0055 
+0056 <span class="comment">%%----------------------------------------------------------------------</span>
+0057 <span class="comment">%% combine</span>
+0058 <span class="comment">%%----------------------------------------------------------------------</span>
+0059 nparts  = 8;
+0060 <span class="comment">%% in general {nmax, thr} will be scalars, so the code below will amount to</span>
+0061 <span class="comment">%%  [i,v,tr]  = mex_traverse(root_trees,part_trees,nparts,domain_kdtree,thr(1),nmax(1));</span>
+0062 <span class="comment">%% but if we want to generate plots by gathering timings for multiple values of</span>
+0063 <span class="comment">%% thr/nmax, we send these in as vectors and use the for-for loop below</span>
+0064 cn = 0;
+0065 <span class="keyword">for</span> id = 1:length(nmax)
+0066     <span class="keyword">for</span> k = 1:length(thr)
+0067         tic;
+0068         <span class="keyword">if</span> doa,
+0069             [i,v,tr]  = mex_traverse(root_trees,part_trees,nparts,domain_kdtree,thr(k),nmax(id),1,pyra.featp,pyra.padx+1,pyra.pady+1,object_model.w_root,object_model.w_part,bs);
+0070         <span class="keyword">else</span>
+0071             [i,v,tr]  = mex_traverse(root_trees,part_trees,nparts,domain_kdtree,thr(k),nmax(id));
+0072         <span class="keyword">end</span>
+0073         cn = cn + 1;
+0074         times(3+cn) = toc;
+0075     <span class="keyword">end</span>
+0076 <span class="keyword">end</span>
+0077 
+0078 <span class="keyword">if</span> nargout&gt;1,
+0079     scales      = pyra.scales(interval+1:end);
+0080     submodels   = object_model.submodels; 
+0081     nobjs       = length(submodels)/6;
+0082     [dets,boxes,is] = <a href="sol2boxes.html" class="code" title="function [dets,boxes,is] = sol2boxes(i,v,submodels,scales,nobjs,root_trees,part_trees,nflip)">sol2boxes</a>(i,v,submodels,scales,nobjs,root_trees,part_trees);
+0083 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:11:51 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

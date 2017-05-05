@@ -1,0 +1,52 @@
+/* Created by mdot for Matlab */
+digraph m2html {
+  cascade_lup -> imgdetect_csc_lu;
+  cascade_lup -> quantizepyramid;
+  demo_all -> cascade_dpm;
+  demo_all -> cascade_lup;
+  demo_all -> dtbb;
+  demo_all -> model_for_ubb;
+  dtbb -> quantizepyramid;
+  dtbb -> sol2boxes;
+  dtbb -> unary_wrapper;
+  get_domain_kdtree -> get_sz;
+  get_domain_pts -> get_sz;
+  get_unary -> fast_lookup_call;
+  get_unary -> get_domain;
+  get_unary -> get_domain_pts;
+  get_unary -> getfeats;
+  imgdetect_csc_lu -> fast_lookup_call;
+  imgdetect_csc_lu -> get_domain;
+  imgdetect_csc_lu -> get_domain_pts;
+  imgdetect_csc_lu -> getfeats;
+  imgdetect_csc_lu -> sol2boxes_cascade;
+  model_for_ubb -> normalize;
+  model_for_ubb -> reshape_pyra;
+  model_for_ubb -> squeeze_models;
+  quantizepyramid -> normalize;
+  quantizepyramid -> reshape_pyra;
+  unary_wrapper -> get_domain_kdtree;
+  unary_wrapper -> get_unary;
+
+  cascade_dpm [URL="cascade_dpm.html"];
+  cascade_lup [URL="cascade_lup.html"];
+  demo_all [URL="demo_all.html"];
+  dtbb [URL="dtbb.html"];
+  fast_lookup_call [URL="fast_lookup_call.html"];
+  get_domain [URL="get_domain.html"];
+  get_domain_kdtree [URL="get_domain_kdtree.html"];
+  get_domain_pts [URL="get_domain_pts.html"];
+  get_sz [URL="get_sz.html"];
+  get_unary [URL="get_unary.html"];
+  getfeats [URL="getfeats.html"];
+  imgdetect_csc_lu [URL="imgdetect_csc_lu.html"];
+  make_dtbb [URL="make_dtbb.html"];
+  model_for_ubb [URL="model_for_ubb.html"];
+  normalize [URL="normalize.html"];
+  quantizepyramid [URL="quantizepyramid.html"];
+  reshape_pyra [URL="reshape_pyra.html"];
+  sol2boxes [URL="sol2boxes.html"];
+  sol2boxes_cascade [URL="sol2boxes_cascade.html"];
+  squeeze_models [URL="squeeze_models.html"];
+  unary_wrapper [URL="unary_wrapper.html"];
+}

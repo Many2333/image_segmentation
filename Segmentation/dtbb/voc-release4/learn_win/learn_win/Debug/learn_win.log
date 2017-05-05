@@ -1,0 +1,25 @@
+﻿La génération a démarré 25/01/2012 11:42:53.
+     1>Projet "C:\Users\Fabrice\iasonas\code\active\star\bbd\voc-release4\learn_win\learn_win\learn_win.vcxproj" sur le nœud 2 (build cible(s)).
+     1>InitializeBuildStatus:
+         Création de "Debug\learn_win.unsuccessfulbuild", car "AlwaysCreate" a été spécifié.
+       ClCompile:
+         Toutes les sorties sont à jour.
+       ManifestResourceCompile:
+         Toutes les sorties sont à jour.
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"Debug\\..\..\..\learn.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\learn.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\Fabrice\iasonas\code\active\star\bbd\voc-release4\learn.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"Debug\\..\..\..\learn.lib" /MACHINE:X86 Debug\learn.exe.embed.manifest.res
+         Debug\learn.obj
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /out:"Debug\learn.exe.embed.manifest" /manifest Debug\learn.exe.intermediate.manifest
+         Toutes les sorties sont à jour.
+       LinkEmbedManifest:
+         Toutes les sorties sont à jour.
+         learn_win.vcxproj -> C:\Users\Fabrice\iasonas\code\active\star\bbd\voc-release4\learn_win\learn_win\Debug\\..\..\..\learn.exe
+       FinalizeBuildStatus:
+         Suppression du fichier "Debug\learn_win.unsuccessfulbuild".
+         Mise à jour de l'horodatage "Debug\learn_win.lastbuildstate".
+     1>Génération du projet "C:\Users\Fabrice\iasonas\code\active\star\bbd\voc-release4\learn_win\learn_win\learn_win.vcxproj" terminée (build cible(s)).
+
+La génération a réussi.
+
+Temps écoulé 00:00:00.31

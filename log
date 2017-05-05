@@ -1,0 +1,8 @@
+更改cpmc_example.m 15 - 18行：现在使用parpool，并在新建pool之前delete(gcp('nocreate'))
+
+delete(gcp('nocreate'))
+     parpool('local', 4);
+
+重新下载vlfeats包，并在进入matlab后执行run('%VL_FEATS_ROOT%\toolbox\vl_setup')命令
+
+修改了l1qc_newton.m中93行左右线性方程组的求解，不再使用linsolve

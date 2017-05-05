@@ -27,13 +27,26 @@
 *.exe
 *.out
 *.app
+*.mexw64
+*.mexw32
+*.mexa64
+
+# data
+*.mat
 
 # img path
-./VOCdevkit/*
-./BSDS300/*
-./output/*
-./mat/*
-./dtbb/*
+VOCdevkit/*
+BSDS300/*
+output/*
+mat/*
+dtbb/*
+
+# images
+*.jpg
+*.jpeg
+*.bmp
+*.png
+
 
 # tmp2
 *.tmp2

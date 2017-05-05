@@ -1,0 +1,58 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_domain_pts</title>
+  <meta name="keywords" content="get_domain_pts">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; get_domain_pts.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_domain_pts
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [grh,grv,sz0,sz2,idx] = get_domain_pts(h_s,h_e,v_s,v_e,feat); </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="get_sz.html" class="code" title="function [sz0,sz2] = get_sz(sh0,sv0);">get_sz</a>	</li><li><a href="../dtbb/util/get_sz.html" class="code" title="function [sz0,sz2] = get_sz(sh0,sv0);">get_sz</a>	</li><li><a href="../dtbb/util/my_meshgrid.html" class="code" title="function [xx,yy,s] = my_meshgrid(x,y)">my_meshgrid</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>	</li><li><a href="imgdetect_csc_lu.html" class="code" title="function [t,dets,boxes] = imgdetect_csc_lu(object_model,thrs,fct_err,pyra)">imgdetect_csc_lu</a>	</li></ul>
+<!-- crossreference -->
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 
+0002 <a name="_sub0" href="#_subfunctions" class="code">function [grh,grv,sz0,sz2,idx] = get_domain_pts(h_s,h_e,v_s,v_e,feat);</a>
+0003 h_range     = h_e - h_s + 1;
+0004 v_range     = v_e - v_s + 1;
+0005 
+0006 [grh,grv]   = <a href="../dtbb/util/my_meshgrid.html" class="code" title="function [xx,yy,s] = my_meshgrid(x,y)">my_meshgrid</a>(h_s:h_e,v_s:v_e);
+0007 [sz0,sz2]   = <a href="get_sz.html" class="code" title="function [sz0,sz2] = get_sz(sh0,sv0);">get_sz</a>(h_range,v_range);
+0008 
+0009 <span class="comment">% (physical memory coordinates)</span>
+0010 <span class="comment">%  1D indexes of offsets for hog cells in template</span>
+0011 idx         = uint16((grh-1)*size(feat,1) + grv);
+0012 <span class="comment">% 2) horizontal/vertical offsets for template blocks</span></pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:11:51 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

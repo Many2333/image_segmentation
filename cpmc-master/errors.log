@@ -1,0 +1,8 @@
+Tue 11:17:44,081 - [Impala.Core.Array.ReadJpgFromMemory ] setjmp
+Tue 11:17:44,081 - [Sandbox.koen.mainColorDescriptor ] [ERROR] Could not read input file: is it really a valid image?
+Tue 11:23:18,173 - [Impala.Core.Array.ReadJpgFromMemory ] setjmp
+Tue 11:23:18,173 - [Sandbox.koen.mainColorDescriptor ] [ERROR] Could not read input file: is it really a valid image?
+Tue 11:26:01,270 - [Impala.Core.Array.ReadJpgFromMemory ] setjmp
+Tue 11:26:01,270 - [Sandbox.koen.mainColorDescriptor ] [ERROR] Could not read input file: is it really a valid image?
+Tue 11:29:39,035 - [Impala.Core.Array.ReadJpgFromMemory ] setjmp
+Tue 11:29:39,035 - [Sandbox.koen.mainColorDescriptor ] [ERROR] Could not read input file: is it really a valid image?

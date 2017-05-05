@@ -1,0 +1,80 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of load_models</title>
+  <meta name="keywords" content="load_models">
+  <meta name="description" content="[models_cell] = load_models(single_object);">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; load_models.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>load_models
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>[models_cell] = load_models(single_object);</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [models_cell] = load_models(single_object); </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> [models_cell] = load_models(single_object);
+ returns a cell array containing the DPM structures
+ if single_object &gt;0  returns cell with single object
+ otherwise returns cell array with all 20 object categories of DPM 08/10
+
+ Copyright (C) 2012 Iasonas Kokkinos
+ available under the terms of the GNU GPLv2</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="model_for_ubb.html" class="code" title="function [object_model,models_cell,csc_model_true] = model_for_ubb(obj_id,nw,thrs_in,nrm_hog)">model_for_ubb</a>	</li></ul>
+<!-- crossreference -->
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [models_cell] = load_models(single_object);</a>
+0002 <span class="comment">% [models_cell] = load_models(single_object);</span>
+0003 <span class="comment">% returns a cell array containing the DPM structures</span>
+0004 <span class="comment">% if single_object &gt;0  returns cell with single object</span>
+0005 <span class="comment">% otherwise returns cell array with all 20 object categories of DPM 08/10</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% Copyright (C) 2012 Iasonas Kokkinos</span>
+0008 <span class="comment">% available under the terms of the GNU GPLv2</span>
+0009 
+0010 DPM_code_dir  = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)),<span class="string">'voc-release4'</span>);
+0011 dirstart  = fullfile(DPM_code_dir,<span class="string">'VOC2009'</span>);
+0012 models    = dir(fullfile(dirstart,<span class="string">'*_final.mat'</span>));
+0013 
+0014 <span class="keyword">if</span> single_object ==0,
+0015     objects = [1:20];
+0016 <span class="keyword">else</span>
+0017     objects = single_object;
+0018 <span class="keyword">end</span>
+0019 cn = 0;
+0020 models_cell = [];
+0021 <span class="comment">%% construct cell array of models</span>
+0022 <span class="keyword">for</span> k= objects
+0023     load(fullfile(dirstart,models(k).name));
+0024     <span class="comment">%% use common lowest threshold for all models</span>
+0025     model.thresh    = min(-1.1, model.thresh);
+0026     cn = cn + 1;
+0027     models_cell{cn}      = model;
+0028 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:08:12 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

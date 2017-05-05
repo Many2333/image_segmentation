@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of dense_def_script</title>
+  <meta name="keywords" content="dense_def_script">
+  <meta name="description" content="%">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../menu.html">Home</a> &gt;  <a href="../menu.html">dtbb</a> &gt; <a href="menu.html">cpp</a> &gt; dense_def_script.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../menu.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb/cpp&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>dense_def_script
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>%</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment">%
+% script that generates c++ header for fast lookup-based convolution
+% works with all root filters - this script allows to write the code
+% 1) without a for-loop (faster execution)
+% 2) without writing the same piece of code multiple times
+%</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="../../dtbb/make_dtbb.html" class="code" title="">make_dtbb</a>	</li></ul>
+<!-- crossreference -->
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">%%</span>
+0002 <span class="comment">%% script that generates c++ header for fast lookup-based convolution</span>
+0003 <span class="comment">%% works with all root filters - this script allows to write the code</span>
+0004 <span class="comment">%% 1) without a for-loop (faster execution)</span>
+0005 <span class="comment">%% 2) without writing the same piece of code multiple times</span>
+0006 <span class="comment">%%</span>
+0007 rt  = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0008 df  = fopen(fullfile(rt,<span class="string">'dense_def.h'</span>),<span class="string">'w'</span>);
+0009 <span class="comment">%fprintf(df,'// automatically generated header file for fast lookup-based convolution \\\n');</span>
+0010 <span class="comment">%fprintf(df,'// please look into root_def_script.m if you want to modify this header file \\\n');</span>
+0011 
+0012 <span class="keyword">for</span> it =[1,2,4:16]
+0013     fprintf(df,<span class="string">'#ifdef NH%i \n'</span>,it);
+0014     fprintf(df,<span class="string">'#define code_nval \\\n'</span>);
+0015     <span class="comment">% `it' is the vertical dimension of the part filter (Nv).</span>
+0016     <span class="keyword">for</span> t =[0:it-1],
+0017         fprintf(df,<span class="string">'cf *values%i      = values_for_models + Nmodels_all*(*(pix_loc + off%i))      + NmNw%i;\\'</span>,t,t,t);
+0018         <span class="comment">%if t&lt;it-1,</span>
+0019         fprintf(df,<span class="string">'\n'</span>);
+0020         <span class="comment">%end</span>
+0021     <span class="keyword">end</span>
+0022     fprintf(df,<span class="string">'\n'</span>);
+0023     fprintf(df,<span class="string">'#define sum_nval'</span>);
+0024     <span class="keyword">for</span> t  = [0:it-2]
+0025         fprintf(df,<span class="string">' values%i[s] +'</span>,t);
+0026     <span class="keyword">end</span>
+0027     fprintf(df,<span class="string">' values%i[s]  \n'</span>,it-1);
+0028     fprintf(df,<span class="string">'\n'</span>);
+0029     
+0030     fprintf(df,<span class="string">'#define setup_offsets \\\n'</span>);
+0031     <span class="keyword">for</span> t  = [0:it-1]
+0032         fprintf(df,<span class="string">'const int off%i = %i*sv;\\\n'</span>,t,t);
+0033     <span class="keyword">end</span>
+0034     fprintf(df,<span class="string">'\n'</span>);
+0035     
+0036     fprintf(df,<span class="string">'#define setup_distortion \\\n'</span>);
+0037     <span class="keyword">for</span> t  = [0:it-1]
+0038         fprintf(df,<span class="string">'cf *nrm%i = nrm_loc + Nma%i;\\\n'</span>,t,t);
+0039     <span class="keyword">end</span>
+0040     fprintf(df,<span class="string">'\n'</span>);
+0041     
+0042     fprintf(df,<span class="string">'#define update_distortion_taps \\\n'</span>);
+0043      <span class="keyword">for</span> t  = [0:it-1]
+0044         fprintf(df,<span class="string">'cf dst%i = *(dix_loc + off%i);\\\n'</span>,t,t);
+0045      <span class="keyword">end</span>
+0046     fprintf(df,<span class="string">'\n'</span>);
+0047      
+0048     fprintf(df,<span class="string">'#define sum_distortion'</span>);
+0049     ch = 1;
+0050     <span class="keyword">switch</span> ch
+0051         <span class="keyword">case</span> 1
+0052         <span class="keyword">for</span> t  = [0:it-2]
+0053             fprintf(df,<span class="string">' nrm%i[s]*(dst%i) +'</span>,t,t);
+0054         <span class="keyword">end</span>
+0055         fprintf(df,<span class="string">' nrm%i[s]*(dst%i) \n'</span>,it-1,it-1);
+0056         <span class="keyword">case</span> 2
+0057             <span class="keyword">for</span> t  = [0:it-2]
+0058                 fprintf(df,<span class="string">' *(dst%i++) +'</span>,t);
+0059             <span class="keyword">end</span>
+0060             fprintf(df,<span class="string">' *(dst%i++) \n'</span>,it-1);
+0061         <span class="keyword">case</span> 3
+0062         <span class="keyword">for</span> t  = [0:it-2]
+0063             fprintf(df,<span class="string">' nrm%i[s] +'</span>,t);
+0064         <span class="keyword">end</span>
+0065         fprintf(df,<span class="string">' nrm%i[s] \n'</span>,it-1);
+0066          <span class="keyword">case</span> 4
+0067             fprintf(df,<span class="string">' (dst%i[0]) \n'</span>,1);
+0068     <span class="keyword">end</span>
+0069     fprintf(df,<span class="string">'\n'</span>);
+0070     <span class="keyword">if</span> 0,
+0071         fprintf(df,<span class="string">'\n'</span>);
+0072         fprintf(df,<span class="string">'#define sum_prod_nval'</span>);
+0073         <span class="keyword">for</span> t  = [0:it-2]
+0074             fprintf(df,<span class="string">'facts[s]*values%i[s] +'</span>,t);
+0075         <span class="keyword">end</span>
+0076         fprintf(df,<span class="string">' facts[s]*values%i[s]  \n'</span>,it-1);
+0077         <span class="comment">% fprintf(df,'#endif \n');</span>
+0078         fprintf(df,<span class="string">'\n'</span>);
+0079     <span class="keyword">end</span>
+0080     fprintf(df,<span class="string">'#endif \n'</span>);
+0081     fprintf(df,<span class="string">'\n'</span>);
+0082     
+0083 <span class="keyword">end</span>
+0084 fprintf(df,<span class="string">'#define code_setup \\\n'</span>);
+0085 <span class="keyword">for</span> it = [0:16]
+0086     fprintf(df,<span class="string">'const int NmNw%i = %i*NmNw;\\\n'</span>,it,it);
+0087     fprintf(df,<span class="string">'const int Nma%i  = %i*Nmodels_all;\\\n'</span>,it,it);
+0088 <span class="keyword">end</span>
+0089 fprintf(df,<span class="string">'\n'</span>);
+0090 fclose(df);
+0091 
+0092</pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:11:51 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

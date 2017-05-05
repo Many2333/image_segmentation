@@ -1,0 +1,245 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of model_for_ubb</title>
+  <meta name="keywords" content="model_for_ubb">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; model_for_ubb.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>model_for_ubb
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [object_model,models_cell,csc_model_true] = model_for_ubb(obj_id,nw,thrs_in,nrm_hog) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="normalize.html" class="code" title="function [normed,nrm] = normalize(input,nrm);">normalize</a>	</li><li><a href="reshape_pyra.html" class="code" title="function out = reshape_pyra(pyra_feat)">reshape_pyra</a>	</li><li><a href="squeeze_models.html" class="code" title="function [subms,filters_out,model_out] = squeeze_models_full(modelc,vocab)">squeeze_models</a>	[subms,filters,model_out] = squeeze_models(modelc)</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="demo_all.html" class="code" title="">demo_all</a>	maxNumCompThreads(1);</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function [models_cell] = load_models(single_object);</a></li><li><a href="#_sub2" class="code">function vocab = get_vocabulary(nwords,do_norm)</a></li></ul>
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [object_model,models_cell,csc_model_true] = model_for_ubb(obj_id,nw,thrs_in,nrm_hog)</a>
+0002 <span class="keyword">if</span> nargin&lt;4
+0003     nrm_hog = 0;
+0004 <span class="keyword">end</span>
+0005 <span class="keyword">if</span> nargin==2,
+0006     thrs_in = [];
+0007     thrsc = []; thresh = []; ords = [];
+0008 <span class="keyword">end</span>
+0009 
+0010 vocab               = <a href="#_sub2" class="code" title="subfunction vocab = get_vocabulary(nwords,do_norm)">get_vocabulary</a>(nw,nrm_hog);
+0011 single_object       = obj_id;
+0012 [models_cell]       = <a href="#_sub1" class="code" title="subfunction [models_cell] = load_models(single_object);">load_models</a>(single_object);
+0013 models_cell_0       = models_cell;
+0014 [submodels, object_model,model0]  <span class="keyword">...</span>
+0015                     = <a href="squeeze_models.html" class="code" title="function [subms,filters_out,model_out] = squeeze_models_full(modelc,vocab)">squeeze_models</a>(models_cell,vocab);
+0016 
+0017 <span class="keyword">for</span> k=1:length(models_cell)
+0018     csc_model_true{k} = cascade_model(models_cell_0{k}, <span class="string">'2009'</span>, 5,0);
+0019     <span class="keyword">for</span> thr_ind = 1:length(thrs_in),
+0020         cn = 0;
+0021         thr = thrs_in(thr_ind);
+0022         csc_model = cascade_model(models_cell_0{k}, models_cell_0{k}.year, 0, thr);
+0023         <span class="keyword">for</span> sm = 1:length(csc_model.cascade.t),
+0024             cn  = cn  + 1;
+0025             thrs(cn,:) = csc_model.cascade.t{sm}';
+0026             ords(cn,:) = csc_model.cascade.order{sm}';
+0027         <span class="keyword">end</span>
+0028         thrsc{thr_ind} = thrs;
+0029         dum = cascade_model(models_cell_0{k}, <span class="string">'2009'</span>, 5,thr);
+0030         csc_model_true{k}.cascadec{thr_ind} = dum.cascade;
+0031     <span class="keyword">end</span>
+0032     csc_model_true{k}.thrs = thrs_in;
+0033 <span class="keyword">end</span>
+0034 
+0035 
+0036 object_model.blocksize_part = [6,6];
+0037 object_model.blocksize_root = object_model.maxsize';
+0038 object_model.model          = model0;
+0039 object_model.submodels      = submodels;
+0040 object_model.vocab          = vocab;
+0041 object_model.thrsc          = thrsc;
+0042 object_model.thresh         = thrs_in;
+0043 object_model.ords           = ords;
+0044 object_model.nrm_hog        = nrm_hog;
+0045 
+0046 
+0047 nsubm  = length(submodels);
+0048 cn = 0;
+0049 bwp = zeros(2,submodels(1).n_parts*nsubm,<span class="string">'single'</span>); offp= bwp;
+0050 bwr = zeros(2,nsubm,<span class="string">'single'</span>);                      offr= bwr;
+0051 <span class="keyword">for</span> mixt =  1:nsubm
+0052     submodel     = submodels(mixt);
+0053     relations    = submodel.relations;
+0054     offr(:,mixt) = zeros(2,1,<span class="string">'single'</span>);
+0055     bwr(:,mixt)  = 1./relations(1).bandwidth;
+0056     <span class="keyword">for</span> part = [1:submodel.n_parts],    <span class="comment">%% loop over mixture parts</span>
+0057         cn = cn + 1;
+0058         bwp(:,cn)   = 1./relations(part+1).bandwidth;
+0059         offp(:,cn)  = relations(part+1).offset;
+0060     <span class="keyword">end</span>
+0061     bs(mixt)  = single(submodel.svm_b);
+0062     bs0(mixt) = single(submodel.svm_b0);
+0063 <span class="keyword">end</span>
+0064 
+0065 object_model.bs      = bs;
+0066 object_model.bs0     = bs0;
+0067 object_model.offsp  = offp;
+0068 object_model.offsr  = offr;
+0069 object_model.bwr    = bwr;
+0070 object_model.bwp    = bwp;
+0071 
+0072 scores_part_separate = object_model.scores_part_separate;
+0073 scores_root_separate = object_model.scores_root_separate;
+0074 
+0075 <span class="keyword">for</span> pid = [1:length(scores_part_separate)]
+0076     scp{pid}  = reshape(permute(flipdim(scores_part_separate{pid},1),[2,1,3]),[nw,36]);
+0077 <span class="keyword">end</span>
+0078 <span class="keyword">for</span> pid = [1:length(scores_root_separate)]
+0079     scr{pid}  = reshape(permute(flipdim(scores_root_separate{pid},1),[2,1,3]),[nw,prod(object_model.submodels(pid).sw)]);
+0080 <span class="keyword">end</span>
+0081 
+0082 object_model.scp = scp;
+0083 object_model.scr = scr;
+0084 
+0085 
+0086 <a name="_sub1" href="#_subfunctions" class="code">function [models_cell] = load_models(single_object);</a>
+0087 <span class="comment">% [models_cell] = load_models(single_object);</span>
+0088 <span class="comment">% returns a cell array containing the DPM structures</span>
+0089 <span class="comment">% if single_object &gt;0  returns cell with single object</span>
+0090 <span class="comment">% otherwise returns cell array with all 20 object categories of DPM 08/10</span>
+0091 <span class="comment">%</span>
+0092 <span class="comment">% Copyright (C) 2012 Iasonas Kokkinos</span>
+0093 <span class="comment">% available under the terms of the GNU GPLv2</span>
+0094 
+0095 DPM_code_dir  = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)),<span class="string">'voc-release4'</span>);
+0096 dirstart  = fullfile(DPM_code_dir,<span class="string">'VOC2009'</span>);
+0097 models    = dir(fullfile(dirstart,<span class="string">'*_final.mat'</span>));
+0098 
+0099 <span class="keyword">if</span> single_object ==0,
+0100     objects = [1:20];
+0101 <span class="keyword">else</span>
+0102     objects = single_object;
+0103 <span class="keyword">end</span>
+0104 cn = 0;
+0105 models_cell = [];
+0106 <span class="comment">%% construct cell array of models</span>
+0107 <span class="keyword">for</span> k= objects
+0108     load(fullfile(dirstart,models(k).name));
+0109     <span class="comment">%% use common lowest threshold for all models</span>
+0110     model.thresh    = min(-1.1, model.thresh);
+0111     cn = cn + 1;
+0112     models_cell{cn}      = model;
+0113 <span class="keyword">end</span>
+0114 
+0115 
+0116 <a name="_sub2" href="#_subfunctions" class="code">function vocab = get_vocabulary(nwords,do_norm)</a>
+0117 fnm_0 = <span class="string">'vocab_1e5_'</span>;
+0118 rt = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0119 
+0120 <span class="keyword">if</span> (nargin&lt;=2)|(do_norm ==0)
+0121     do_norm = 0;
+0122     norm_str = <span class="string">''</span>;
+0123 <span class="keyword">else</span>
+0124     norm_str = sprintf(<span class="string">'norm_%i_'</span>,do_norm);
+0125 <span class="keyword">end</span>
+0126 
+0127 fnm_save = fullfile(rt,[fnm_0,norm_str,num2str(nwords)]);
+0128 <span class="keyword">try</span>
+0129     load(fnm_save,<span class="string">'vocab'</span>); vocab; <span class="keyword">return</span>;
+0130 <span class="keyword">end</span>
+0131 
+0132 <span class="comment">%%----------------------------------------------------------------------</span>
+0133 <span class="comment">%% Codebook construction</span>
+0134 <span class="comment">%%----------------------------------------------------------------------</span>
+0135 conf.dataDir = fullfile(matlabsavedir,<span class="string">'bb'</span>); my_cd(conf.dataDir);
+0136 conf.imDir   = fullfile(matlabsavedir,<span class="string">'VOC'</span>,<span class="string">'VOC2009'</span>,<span class="string">'JPEGImages'</span>);
+0137 
+0138 conf.numTrain    = 50;
+0139 conf.numWords    = nwords;
+0140 conf.quantizer   = <span class="string">'kdtree'</span> ;
+0141 conf.hogOpts     = {<span class="string">'Step'</span>, 5} ;
+0142 conf.clobber     = false ;
+0143 
+0144 conf.tinyProblem = false;
+0145 conf.prefix = <span class="string">'try_000'</span> ;
+0146 conf.randSeed = 1 ;
+0147 
+0148 conf.vocabPath   = fullfile(conf.dataDir, [conf.prefix <span class="string">'-vocab.mat'</span>]) ;
+0149 conf.histPath    = fullfile(conf.dataDir, [conf.prefix <span class="string">'-hists.mat'</span>]) ;
+0150 conf.modelPath   = fullfile(conf.dataDir, [conf.prefix <span class="string">'-model.mat'</span>]) ;
+0151 conf.resultPath  = fullfile(conf.dataDir, [conf.prefix <span class="string">'-result'</span>]) ;
+0152 
+0153 randn(<span class="string">'state'</span>,      conf.randSeed) ;
+0154 rand(<span class="string">'state'</span>,       conf.randSeed) ;
+0155 vl_twister(<span class="string">'state'</span>, conf.randSeed) ;
+0156 
+0157 <span class="comment">% --------------------------------------------------------------------</span>
+0158 <span class="comment">%                                                           Setup data</span>
+0159 <span class="comment">% --------------------------------------------------------------------</span>
+0160 ims = vl_colsubset(dir(fullfile(conf.imDir,<span class="string">'*.jpg'</span>))',conf.numTrain);
+0161 ims = cellfun(@(x)fullfile(conf.imDir,x),{ims.name},<span class="string">'UniformOutput'</span>,false);
+0162 
+0163 conf.ncells = 1e4; <span class="comment">% number of HOG cells used for dictionary construction</span>
+0164 conf.cpi    = ceil(conf.ncells/conf.numTrain); <span class="comment">% number of cells per image</span>
+0165 hog.sbin = 8; hog.interval = 10; padx = 0; pady = 0;
+0166 
+0167 sampled = [];
+0168 <span class="keyword">for</span> im_id = 1:length(ims),
+0169     fprintf(2,<span class="string">'.'</span>);
+0170     im   = (double(imread(ims{im_id})))/255;
+0171     pyra = featpyramid(im, hog,padx,pady);
+0172     <span class="comment">%pyra = projectpyra(im,</span>
+0173     out = [];
+0174     <span class="keyword">for</span> k=1:length(pyra.feat),
+0175         out = [out,<a href="reshape_pyra.html" class="code" title="function out = reshape_pyra(pyra_feat)">reshape_pyra</a>(pyra.feat{k})'];
+0176     <span class="keyword">end</span>
+0177     sampled = [sampled,vl_colsubset(out,conf.cpi)];
+0178 <span class="keyword">end</span>
+0179 
+0180 <span class="keyword">if</span> do_norm&gt;0,
+0181     [sampled,nr] = <a href="normalize.html" class="code" title="function [normed,nrm] = normalize(input,nrm);">normalize</a>(sampled,do_norm);
+0182 <span class="keyword">end</span>
+0183 
+0184 <span class="keyword">for</span> nw = [64,128,256,512,1024,2048]
+0185     fnm_save =  fullfile(rt,[fnm_0,pca_str,norm_str,num2str(nw)]);
+0186     <span class="keyword">try</span>
+0187         load(fnm_save);
+0188     <span class="keyword">catch</span>
+0189         [vocab0,i]  = vl_kmeans(single(sampled),  nw, <span class="string">'verbose'</span>, <span class="string">'algorithm'</span>, <span class="string">'elkan'</span>,<span class="string">'NumRepetitions'</span>,10);
+0190         ds = sqrt(sum(pow_2(sampled -  vocab0(:,i)),1));
+0191         [hs] = histc(i,[1:nw+1]-.5); hs = hs(1:end-1);
+0192         [sr,id] = sort(hs,<span class="string">'descend'</span>);
+0193         vocab = vocab0(:,id);
+0194         save(fnm_save,<span class="string">'vocab'</span>,<span class="string">'ds'</span>,<span class="string">'i'</span>,<span class="string">'id'</span>);
+0195     <span class="keyword">end</span>
+0196 <span class="keyword">end</span>
+0197 <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:11:51 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

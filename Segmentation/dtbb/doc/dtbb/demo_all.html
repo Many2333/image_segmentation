@@ -1,0 +1,187 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of demo_all</title>
+  <meta name="keywords" content="demo_all">
+  <meta name="description" content="maxNumCompThreads(1);">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; demo_all.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>demo_all
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>maxNumCompThreads(1);</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">maxNumCompThreads(1);</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="cascade_dpm.html" class="code" title="function [times,dCSC,bCSC] = cascade_dpm(im,object_model,thrs)">cascade_dpm</a>	</li><li><a href="cascade_lup.html" class="code" title="function [times_c,dets,boxes] = cascade_lup(im,object_model,thrs,f_errs)">cascade_lup</a>	</li><li><a href="dtbb.html" class="code" title="function [dets,boxes,is,times,tr,domain_kdtree] = dtbb(im,object_model,thr,nmax,fct_err)">dtbb</a>	[dets,boxes,is,times,tr,domain_kdtree] = dtbb(im,object_model,thr,nmax,fct_err)</li><li><a href="model_for_ubb.html" class="code" title="function [object_model,models_cell,csc_model_true] = model_for_ubb(obj_id,nw,thrs_in,nrm_hog)">model_for_ubb</a>	</li><li><a href="../dtbb/util/computed_bounds.html" class="code" title="function [im,node_map]= computed_bounds(mxt_best,scl_best,gr,tr,offsets,sz,lwt)">computed_bounds</a>	</li><li><a href="../dtbb/util/showboxes_on_im.html" class="code" title="function showboxes_on_im( boxes, clr_in)">showboxes_on_im</a>	showboxes(im, boxes, out)</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">%maxNumCompThreads(1);</span>
+0002 
+0003 <span class="comment">%% Setup model structures</span>
+0004 im            = imread(<span class="string">'000084.jpg'</span>);
+0005 thr           = -.5;    <span class="comment">%% detection threshold</span>
+0006 obj_id        = 2;      <span class="comment">%% second category (bicycles)</span>
+0007 nw            = 256;    <span class="comment">%% vocabulary size for lookup-based approximation</span>
+0008 [object_model,models_cell,csc_model_true] = <a href="model_for_ubb.html" class="code" title="function [object_model,models_cell,csc_model_true] = model_for_ubb(obj_id,nw,thrs_in,nrm_hog)">model_for_ubb</a>(obj_id,nw,thr);
+0009 
+0010 p_e           = .1;     <span class="comment">%% probability that Chebyshev bound is not valid</span>
+0011 fct_err       = sqrt(1/p_e);
+0012 
+0013 <span class="comment">%%=========================================================================</span>
+0014 <span class="comment">%% Bounding-based detection                                               %</span>
+0015 <span class="comment">%%=========================================================================</span>
+0016 
+0017 <span class="comment">%%-------------------------------------------------------------------------</span>
+0018 <span class="comment">%% exact DTBB, first best</span>
+0019 <span class="comment">%%-------------------------------------------------------------------------</span>
+0020 [dets_1b_ex,boxes_1b_ex,is_1b_ex,times_1b_ex,tr_1b_ex,domain_tree] = <a href="dtbb.html" class="code" title="function [dets,boxes,is,times,tr,domain_kdtree] = dtbb(im,object_model,thr,nmax,fct_err)">dtbb</a>(im,object_model,thr, 1);
+0021 
+0022 <span class="comment">%%-------------------------------------------------------------------------</span>
+0023 <span class="comment">%% exact DTBB, all above thr</span>
+0024 <span class="comment">%%-------------------------------------------------------------------------</span>
+0025 [dets_th_ex,boxes_th_ex,is_th_ex,times_th_ex,tr_th_ex,~]           = <a href="dtbb.html" class="code" title="function [dets,boxes,is,times,tr,domain_kdtree] = dtbb(im,object_model,thr,nmax,fct_err)">dtbb</a>(im,object_model,thr,-1);
+0026 
+0027 <span class="comment">%%-------------------------------------------------------------------------</span>
+0028 <span class="comment">%% lookup-bound DTBB, first best</span>
+0029 <span class="comment">%%-------------------------------------------------------------------------</span>
+0030 [dets_1b_lu,boxes_1b_lu,is_1b_lu,times_1b_lu,tr_1b_lu,~]           = <a href="dtbb.html" class="code" title="function [dets,boxes,is,times,tr,domain_kdtree] = dtbb(im,object_model,thr,nmax,fct_err)">dtbb</a>(im,object_model,thr, 1,fct_err);
+0031 
+0032 <span class="comment">%%-------------------------------------------------------------------------</span>
+0033 <span class="comment">%% lookup-bound DTBB, all above thr</span>
+0034 <span class="comment">%%-------------------------------------------------------------------------</span>
+0035 [dets_th_lu,boxes_th_lu,is_th_lu,times_th_lu,tr_th_lu,~]           = <a href="dtbb.html" class="code" title="function [dets,boxes,is,times,tr,domain_kdtree] = dtbb(im,object_model,thr,nmax,fct_err)">dtbb</a>(im,object_model,thr,-1,fct_err);
+0036 
+0037 <span class="comment">%%-------------------------------------------------------------------------</span>
+0038 <span class="comment">%% lookup-bound cascade, all above thr</span>
+0039 <span class="comment">%%-------------------------------------------------------------------------</span>
+0040 [times_clup,dets_clup,boxes_clup]                                  = <a href="cascade_lup.html" class="code" title="function [times_c,dets,boxes] = cascade_lup(im,object_model,thrs,f_errs)">cascade_lup</a>(im,object_model,thr,fct_err);
+0041 
+0042 
+0043 <span class="comment">%%=========================================================================</span>
+0044 <span class="comment">%% ORIGINAL DPM/C-DPM code                                                %</span>
+0045 <span class="comment">%%=========================================================================</span>
+0046 
+0047 <span class="comment">%%-------------------------------------------------------------------------</span>
+0048 <span class="comment">%% GDTs</span>
+0049 <span class="comment">%%-------------------------------------------------------------------------</span>
+0050 models_cell{1}.dofast = 1;
+0051 [dets_gdt, boxes_gdt, info_0,times_gdt,model]                      = imgdetect(im, models_cell{1}, thr);
+0052 <span class="comment">%%-------------------------------------------------------------------------</span>
+0053 <span class="comment">%% PCA-based cascade, all above thr</span>
+0054 <span class="comment">%%-------------------------------------------------------------------------</span>
+0055 [times_cdpm,dets_cdpm,boxes_cdpm]                                  = <a href="cascade_dpm.html" class="code" title="function [times,dCSC,bCSC] = cascade_dpm(im,object_model,thrs)">cascade_dpm</a>(im,csc_model_true{1},thr);
+0056 
+0057 
+0058 <span class="comment">%%=========================================================================</span>
+0059 <span class="comment">%% display timings</span>
+0060 <span class="comment">%%=========================================================================</span>
+0061 
+0062 disp(<span class="string">'------DTBB, exact scores------'</span>)
+0063 disp(sprintf(<span class="string">'HOG Pyramid         : %.2f sec'</span>, times_1b_ex(1)));
+0064 disp(sprintf(<span class="string">'Score   computation : %.2f sec'</span>, times_1b_ex(2)));
+0065 disp(sprintf(<span class="string">'KD tree construction: %.2f sec'</span>, times_1b_ex(3)));
+0066 disp(sprintf(<span class="string">'Detection, 1st-best : %.2f sec'</span>, times_1b_ex(4)));
+0067 disp(sprintf(<span class="string">'Detection, All&gt;%.1f : %.2f sec'</span>, thr,times_th_ex(4)));
+0068 fprintf(<span class="string">'\n'</span>)
+0069 
+0070 disp(<span class="string">'----DTBB, lookup-bound scores-'</span>)
+0071 disp(sprintf(<span class="string">'HOG Pyramid + ANN   : %.2f sec'</span>, times_1b_lu(1)));
+0072 disp(sprintf(<span class="string">'Feature computation : %.2f sec'</span>, times_1b_lu(2)));
+0073 disp(sprintf(<span class="string">'KD tree construction: %.2f sec'</span>, times_1b_lu(3)));
+0074 disp(sprintf(<span class="string">'Detection, 1st-best : %.2f sec'</span>, times_1b_lu(4)));
+0075 disp(sprintf(<span class="string">'Detection, All&gt;%.1f : %.2f sec'</span>, thr,times_th_lu(4)));
+0076 fprintf(<span class="string">'\n'</span>)
+0077 
+0078 disp(<span class="string">'------------GDT---------------'</span>)
+0079 disp(sprintf(<span class="string">'Feature computation : %.2f sec'</span>, times_gdt(1)));
+0080 disp(sprintf(<span class="string">'GDT cost            : %.2f sec'</span>, times_gdt(2)));
+0081 fprintf(<span class="string">'\n'</span>)
+0082 
+0083 
+0084 disp(<span class="string">'-------PCA-based Cascade------'</span>)
+0085 disp(sprintf(<span class="string">'HOG Pyramid         : %.2f sec'</span>, times_cdpm(1)));
+0086 disp(sprintf(<span class="string">'Cascade detection   : %.2f sec'</span>, times_cdpm(2)));
+0087 fprintf(<span class="string">'\n'</span>)
+0088 
+0089 disp(<span class="string">'------Lookup-bound Cascade----'</span>)
+0090 disp(sprintf(<span class="string">'HOG Pyramid + ANN   : %.2f sec'</span>, times_clup(1)));
+0091 disp(sprintf(<span class="string">'Cascade detection   : %.2f sec'</span>, times_clup(2)));
+0092 fprintf(<span class="string">'\n'</span>)
+0093 
+0094 
+0095 <span class="comment">%%=========================================================================</span>
+0096 <span class="comment">%% verify that all methods get the same detection &amp; score</span>
+0097 <span class="comment">%%=========================================================================</span>
+0098 dets_meth  = {dets_1b_ex, dets_1b_lu, dets_gdt,  dets_clup, dets_cdpm };
+0099 boxes_meth = {boxes_1b_ex,boxes_1b_lu,boxes_gdt, boxes_clup,boxes_cdpm};
+0100 methods    = {<span class="string">'DTBB - exact'</span>, <span class="string">'DTBB - lookup bounds'</span>,<span class="string">'GDT'</span>, <span class="string">'Cascade, PCA-based'</span>,<span class="string">'Cascade, lookup bounds'</span>};
+0101 <span class="keyword">for</span> k=1:5
+0102     figure(k); clf;
+0103     imshow(im); hold on;
+0104     <a href="../dtbb/util/showboxes_on_im.html" class="code" title="function showboxes_on_im( boxes, clr_in)">showboxes_on_im</a>(boxes_meth{k}(1,:),<span class="string">'b'</span>)
+0105     <a href="../dtbb/util/showboxes_on_im.html" class="code" title="function showboxes_on_im( boxes, clr_in)">showboxes_on_im</a>(dets_meth{k}(1,:), <span class="string">'r'</span>)
+0106     title([methods{k},sprintf(<span class="string">'; score = %.4f'</span>,dets_meth{k}(1,end))],<span class="string">'fontsize'</span>,20)
+0107 <span class="keyword">end</span>
+0108 
+0109 
+0110 <span class="comment">%%=========================================================================</span>
+0111 <span class="comment">%% show upper bounds on intervals</span>
+0112 <span class="comment">%%=========================================================================</span>
+0113 
+0114 <span class="comment">%% mixture and scale indexes for the 1st-best detection</span>
+0115 mxt_best    = is_1b_ex{1}(1,end-1);
+0116 scl_best    = is_1b_ex{1}(1,end-2);
+0117 
+0118 <span class="comment">%% get DPM's dense score</span>
+0119 score_gdt       = model.rules{model.start}(mxt_best).score{scl_best+10};
+0120 sz              = size(score_gdt); 
+0121 offsets         = model.maxsize+1;
+0122 
+0123 <span class="comment">%% bounds computed up to first-best BB detection,   with exact part scores</span>
+0124 bounds_1b_ex       = <a href="../dtbb/util/computed_bounds.html" class="code" title="function [im,node_map]= computed_bounds(mxt_best,scl_best,gr,tr,offsets,sz,lwt)">computed_bounds</a>(mxt_best,scl_best,domain_tree,tr_1b_ex,offsets,sz); 
+0125 
+0126 <span class="comment">%% bounds computed up to score = -1,                with exact part scores</span>
+0127 bounds_m1_ex        = <a href="../dtbb/util/computed_bounds.html" class="code" title="function [im,node_map]= computed_bounds(mxt_best,scl_best,gr,tr,offsets,sz,lwt)">computed_bounds</a>(mxt_best,scl_best,domain_tree,tr_th_ex,offsets,sz); 
+0128 
+0129 <span class="comment">%% bounds computed up to first-best BB detection,   with lookup-based bounds</span>
+0130 bounds_1b_lu       = <a href="../dtbb/util/computed_bounds.html" class="code" title="function [im,node_map]= computed_bounds(mxt_best,scl_best,gr,tr,offsets,sz,lwt)">computed_bounds</a>(mxt_best,scl_best,domain_tree,tr_1b_lu,offsets,sz); 
+0131 
+0132 <span class="comment">%% bounds computed up to score = -1,                with lookup-based bounds</span>
+0133 bounds_m1_lu        = <a href="../dtbb/util/computed_bounds.html" class="code" title="function [im,node_map]= computed_bounds(mxt_best,scl_best,gr,tr,offsets,sz,lwt)">computed_bounds</a>(mxt_best,scl_best,domain_tree,tr_th_lu,offsets,sz); 
+0134 
+0135 fs    = 15;
+0136 range = [-2.5,1];
+0137 figure,imagesc(score_gdt, range);     axis off; title(<span class="string">'GDT score'</span>,<span class="string">'fontsize'</span>,fs)  
+0138 figure,imagesc(bounds_1b_ex, range);  axis off; title(<span class="string">'BB  upper bounds, 1st-best, exact part scores'</span>,<span class="string">'fontsize'</span>,fs)
+0139 figure,imagesc(bounds_m1_ex, range);  axis off; title(sprintf(<span class="string">'BB  upper bounds, Score&gt;%.2f, exact part scores'</span>,thr),<span class="string">'fontsize'</span>,fs)
+0140 figure,imagesc(bounds_1b_lu, range);  axis off; title(<span class="string">'BB  upper bounds, 1st-best, lookup-bounds for part scores'</span>,<span class="string">'fontsize'</span>,fs)
+0141 figure,imagesc(bounds_m1_lu, range);  axis off; title(sprintf(<span class="string">'BB  upper bounds, Score&gt;%.2f, lookup-bounds for part scores'</span>,thr),<span class="string">'fontsize'</span>,fs)</pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:11:51 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

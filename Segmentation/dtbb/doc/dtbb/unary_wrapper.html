@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of unary_wrapper</title>
+  <meta name="keywords" content="unary_wrapper">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; unary_wrapper.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>unary_wrapper
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [part_trees,root_trees,domain_kdtree,bs,times] = unary_wrapper(model,levels_wt,pyra,doa,interval,times,fct_err) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="get_domain_kdtree.html" class="code" title="function domain_kdtree = get_domain_kdtree(grh,grv)">get_domain_kdtree</a>	</li><li><a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="dtbb.html" class="code" title="function [dets,boxes,is,times,tr,domain_kdtree] = dtbb(im,object_model,thr,nmax,fct_err)">dtbb</a>	[dets,boxes,is,times,tr,domain_kdtree] = dtbb(im,object_model,thr,nmax,fct_err)</li></ul>
+<!-- crossreference -->
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [part_trees,root_trees,domain_kdtree,bs,times] = unary_wrapper(model,levels_wt,pyra,doa,interval,times,fct_err)</a>
+0002 bwr             = model.bwr;
+0003 bwp             = model.bwp;
+0004 bs              = model.bs;
+0005 allr            = model.allr;
+0006 allp            = model.allp;
+0007 blocksize_root  = model.blocksize_root;
+0008 blocksize_part  = model.blocksize_part;
+0009 offsr           = model.offsr;
+0010 offsp           = model.offsp;
+0011 
+0012 <span class="keyword">if</span> doa,
+0013     nrmr        = model.nrmr;
+0014     nrmp        = model.nrmp;
+0015     scores_root = model.scores_root;
+0016     scores_part = model.scores_part;
+0017 <span class="keyword">end</span>
+0018 
+0019 <span class="keyword">if</span> ~exist(<span class="string">'times'</span>,<span class="string">'var'</span>), times = zeros(1,3); <span class="keyword">end</span>
+0020 
+0021 unary = tic;
+0022 <span class="keyword">for</span> l = 1:length(levels_wt)
+0023     level     = levels_wt(l);
+0024     <span class="keyword">if</span> doa,
+0025         [root_trees{l},troot,grh,grv]  = <a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>(pyra,level,         allr,blocksize_root,bwr,offsr,bs,1,scores_root,nrmr,single(fct_err));
+0026         [part_trees{l},tpart]          = <a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>(pyra,level-interval,allp,blocksize_part,bwp,offsp,[],1,scores_part,nrmp,single(fct_err));
+0027     <span class="keyword">else</span>
+0028         [root_trees{l},troot,grh,grv]  = <a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>(pyra,level,         allr,blocksize_root,bwr,offsr,bs,0);
+0029         [part_trees{l},tpart]          = <a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>(pyra,level-interval,allp,blocksize_part,bwp,offsp,[],0);
+0030     <span class="keyword">end</span>
+0031     <span class="keyword">if</span> l==1
+0032         tic;
+0033         domain_kdtree = <a href="get_domain_kdtree.html" class="code" title="function domain_kdtree = get_domain_kdtree(grh,grv)">get_domain_kdtree</a>(grh,grv);
+0034         times(3) = times(3) + toc;
+0035     <span class="keyword">end</span>
+0036     times([2,3]) = times([2,3]) + troot  + tpart;
+0037 <span class="keyword">end</span>
+0038 
+0039 <span class="keyword">if</span> 0
+0040 l = 1;
+0041 level     = levels_wt(l);
+0042 doa = 1;
+0043 [root_trees_lu{l},troot,grh,grv]  = <a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>(pyra,level,         allr,blocksize_root,bwr,offsr,bs,1,scores_root,nrmr,single(fct_err));
+0044 [part_trees_lu{l},tpart]          = <a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>(pyra,level-interval,allp,blocksize_part,bwp,offsp,[],1,scores_part,nrmp,single(fct_err));
+0045 doa = 0;
+0046 [root_trees_ap{l},troot,grh,grv]  = <a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>(pyra,level,         allr,blocksize_root,bwr,offsr,bs,0);
+0047 [part_trees_ap{l},tpart]          = <a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>(pyra,level-interval,allp,blocksize_part,bwp,offsp,[],0);
+0048 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:11:51 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

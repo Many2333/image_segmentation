@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of front_end</title>
+  <meta name="keywords" content="front_end">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; front_end.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>front_end
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [part_trees,root_trees,domain_kdtree,times] =  front_end(model0,levels_wt,pyra,allr,allp,submodels,interval,times) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">
+[part_trees,root_trees,times] =front_end(model0,levels_wt,pyra,filters,times) 
+% constructs unary terms associated kd-trees
+% 
+%----------------------------------------------------------------------
+% spatial offsets - bandwidths for part &amp; root terms 
+%----------------------------------------------------------------------
+
+ Copyright (C) 2012 Iasonas Kokkinos
+ available under the terms of the GNU GPLv2</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="get_domain_kdtree.html" class="code" title="function domain_kdtree = get_domain_kdtree(grh,grv)">get_domain_kdtree</a>	</li><li><a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [part_trees,root_trees,domain_kdtree,times] =  front_end(model0,levels_wt,pyra,allr,allp,submodels,interval,times)</a>
+0002 <span class="comment">%</span>
+0003 <span class="comment">%[part_trees,root_trees,times] =front_end(model0,levels_wt,pyra,filters,times)</span>
+0004 <span class="comment">%% constructs unary terms associated kd-trees</span>
+0005 <span class="comment">%%</span>
+0006 <span class="comment">%%----------------------------------------------------------------------</span>
+0007 <span class="comment">%% spatial offsets - bandwidths for part &amp; root terms</span>
+0008 <span class="comment">%%----------------------------------------------------------------------</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% Copyright (C) 2012 Iasonas Kokkinos</span>
+0011 <span class="comment">% available under the terms of the GNU GPLv2</span>
+0012 
+0013 blocksize_part = [6,6];
+0014 blocksize_root = model0.maxsize';
+0015 nsubm  = length(submodels);
+0016 cn = 0;
+0017 bwp = zeros(2,submodels(1).n_parts*nsubm,<span class="string">'single'</span>); offp= bwp;
+0018 bwr = zeros(2,nsubm,<span class="string">'single'</span>);                      offr= bwr;
+0019 <span class="keyword">for</span> mixt =  1:nsubm
+0020     submodel     = submodels(mixt);
+0021     relations    = submodel.relations;
+0022     offr(:,mixt) = zeros(2,1,<span class="string">'single'</span>);
+0023     bwr(:,mixt)  = 1./relations(1).bandwidth;
+0024     <span class="keyword">for</span> part = [1:submodel.n_parts],    <span class="comment">%% loop over mixture parts</span>
+0025         cn = cn + 1;
+0026         bwp(:,cn)   = 1./relations(part+1).bandwidth;
+0027         offp(:,cn)  = relations(part+1).offset;
+0028     <span class="keyword">end</span>
+0029     bs(mixt)  = single(submodel.svm_b);
+0030 <span class="keyword">end</span>
+0031 
+0032 <span class="keyword">if</span> ~exist(<span class="string">'times'</span>,<span class="string">'var'</span>), times = zeros(1,3); <span class="keyword">end</span>
+0033 
+0034 <span class="keyword">for</span> l = 1:length(levels_wt),
+0035     tic
+0036     level     = levels_wt(l);
+0037     tic;
+0038     [root_trees{l},tpart,grh,grv]  = <a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>(pyra,level,         allr,blocksize_root,bwr,offr,bs,0);
+0039     [part_trees{l},troot]          = <a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>(pyra,level-interval,allp,blocksize_part,bwp,offp,[],0);
+0040     times([1,2]) = times([1,2]) + tpart + troot;
+0041     <span class="keyword">if</span> l==1
+0042         tic;
+0043         domain_kdtree = <a href="get_domain_kdtree.html" class="code" title="function domain_kdtree = get_domain_kdtree(grh,grv)">get_domain_kdtree</a>(grh,grv); 
+0044         times(2) = times(2) + toc;
+0045     <span class="keyword">end</span>
+0046 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:11:21 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

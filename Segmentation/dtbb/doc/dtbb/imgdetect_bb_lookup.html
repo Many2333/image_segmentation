@@ -1,0 +1,163 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of imgdetect_bb_lookup</title>
+  <meta name="keywords" content="imgdetect_bb_lookup">
+  <meta name="description" content="[dets,boxes,is,times,tr,domain_kdtree] = imgdetect_bb(im,models_cell,thr,nmax)">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; imgdetect_bb_lookup.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>imgdetect_bb_lookup
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>[dets,boxes,is,times,tr,domain_kdtree] = imgdetect_bb(im,models_cell,thr,nmax)</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [times_c,dets,boxes,is,tr,domain_kdtree,pyra] = imgdetect_bb_lookup(im,model_all,thrs,nmax,f_errs,pyra) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> [dets,boxes,is,times,tr,domain_kdtree] = imgdetect_bb(im,models_cell,thr,nmax)
+ fast object detection using dual-tree branch&amp;bound/cascaded detection
+ Inputs:
+ im:           input image
+ models_cell:  cell array of models - generated as in the demo_* scripts
+ thr:          no hypothesis below this threshold will be retrieved
+ nmax:         max # of detections. Set to negative value to get all
+ detections above threshold (cascaded detection is used for that).
+ Set to integer number, k, to get at most k configurations (BB is used for
+ that). BB will stop if the upper bound of an interval is below thr
+
+ Outputs:
+ Detection data:
+ dets,boxes,is:    identical with the outputs of imgdetect (Felzenszwalb &amp; co)
+ Timing data
+ times:            (1): pyramid (2): unary (3): kdtrees (4:end): search
+ Display data:
+ tr:               keeps track of visited domain tree nodes,scores, etc
+ domain_kdtree:    domain tree
+
+ Copyright (C) 2012 Iasonas Kokkinos
+ available under the terms of the GNU GPLv2</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="get_domain_kdtree.html" class="code" title="function domain_kdtree = get_domain_kdtree(grh,grv)">get_domain_kdtree</a>	</li><li><a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>	</li><li><a href="quantizepyramid.html" class="code" title="function [pyra] = quantizepyramid(pyra,vocab,do_approx,nrm_hog)">quantizepyramid</a>	</li><li><a href="sol2boxes.html" class="code" title="function [dets,boxes,is] = sol2boxes(i,v,submodels,scales,nobjs,root_trees,part_trees,nflip)">sol2boxes</a>	% turn the outputs of branch and bound into original DPM format</li><li><a href="../dtbb/util/expand_structure.html" class="code" title="">expand_structure</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [times_c,dets,boxes,is,tr,domain_kdtree,pyra] = imgdetect_bb_lookup(im,model_all,thrs,nmax,f_errs,pyra)</a>
+0002 <span class="comment">% [dets,boxes,is,times,tr,domain_kdtree] = imgdetect_bb(im,models_cell,thr,nmax)</span>
+0003 <span class="comment">% fast object detection using dual-tree branch&amp;bound/cascaded detection</span>
+0004 <span class="comment">% Inputs:</span>
+0005 <span class="comment">% im:           input image</span>
+0006 <span class="comment">% models_cell:  cell array of models - generated as in the demo_* scripts</span>
+0007 <span class="comment">% thr:          no hypothesis below this threshold will be retrieved</span>
+0008 <span class="comment">% nmax:         max # of detections. Set to negative value to get all</span>
+0009 <span class="comment">% detections above threshold (cascaded detection is used for that).</span>
+0010 <span class="comment">% Set to integer number, k, to get at most k configurations (BB is used for</span>
+0011 <span class="comment">% that). BB will stop if the upper bound of an interval is below thr</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% Outputs:</span>
+0014 <span class="comment">% Detection data:</span>
+0015 <span class="comment">% dets,boxes,is:    identical with the outputs of imgdetect (Felzenszwalb &amp; co)</span>
+0016 <span class="comment">% Timing data</span>
+0017 <span class="comment">% times:            (1): pyramid (2): unary (3): kdtrees (4:end): search</span>
+0018 <span class="comment">% Display data:</span>
+0019 <span class="comment">% tr:               keeps track of visited domain tree nodes,scores, etc</span>
+0020 <span class="comment">% domain_kdtree:    domain tree</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Copyright (C) 2012 Iasonas Kokkinos</span>
+0023 <span class="comment">% available under the terms of the GNU GPLv2</span>
+0024 
+0025 <span class="comment">%[submodels,filters,model0] = squeeze_models(models_cell);</span>
+0026 times = zeros(1,4);
+0027 model_all.sbin = 8;
+0028 model_all.interval = 10;
+0029 <span class="keyword">if</span> ~exist(<span class="string">'pyra'</span>,<span class="string">'var'</span>)
+0030     tic;
+0031     [pyra]          = featpyramid(im, model_all);
+0032     times(1)        = toc;
+0033     pyra            = <a href="quantizepyramid.html" class="code" title="function [pyra] = quantizepyramid(pyra,vocab,do_approx,nrm_hog)">quantizepyramid</a>(pyra,model_all.vocab,0);
+0034 <span class="keyword">end</span>
+0035 
+0036 interval        = model_all.interval;
+0037 levels_wt       = [[interval+1]:length(pyra.feat)];
+0038 
+0039 <span class="comment">%%----------------------------------------------------------------------</span>
+0040 <span class="comment">%% get unary terms &amp; construct associated kd-trees</span>
+0041 <span class="comment">%%----------------------------------------------------------------------</span>
+0042 <span class="comment">%[part_trees,root_trees,domain_kdtree,bs,times] = front_end_lookup(model_all,levels_wt,pyra,...</span>
+0043 <span class="comment">%    model_all.scores_part,model_all.scores_root,model_all.nrm_all_part,model_all.nrm_all_root,...</span>
+0044 <span class="comment">%    model_all.submodels,interval,fc_err,times);</span>
+0045 structure = model_all; <a href="../dtbb/util/expand_structure.html" class="code" title="">expand_structure</a>;
+0046 doa = 1;
+0047 
+0048 <span class="keyword">for</span> f_ind = 1:length(f_errs),
+0049     times_c{f_ind} = times(1);
+0050     fct_err = f_errs(f_ind);
+0051     unary = tic;
+0052     <span class="keyword">for</span> l = 1:length(levels_wt),
+0053         level     = levels_wt(l);
+0054         [root_trees{l},~,grh,grv]  = <a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>(pyra,level,         allr,blocksize_root,bwr,offsr,bs,doa,scores_root,nrmr,single(fct_err));
+0055         part_trees{l}            = <a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>(pyra,level-interval,allp,blocksize_part,bwp,offsp,[],doa,scores_part,nrmp,single(fct_err));
+0056         <span class="keyword">if</span> l==1
+0057             domain_kdtree = <a href="get_domain_kdtree.html" class="code" title="function domain_kdtree = get_domain_kdtree(grh,grv)">get_domain_kdtree</a>(grh,grv);
+0058         <span class="keyword">end</span>
+0059     <span class="keyword">end</span>
+0060     times_c{f_ind}(2) = toc(unary);
+0061     <span class="comment">%%----------------------------------------------------------------------</span>
+0062     <span class="comment">%% combine</span>
+0063     <span class="comment">%%----------------------------------------------------------------------</span>
+0064     nparts  = 8;
+0065     <span class="comment">%% in general {nmax, thr} will be scalars, so the code below will amount to</span>
+0066     <span class="comment">%%  [i,v,tr]  = mex_traverse(root_trees,part_trees,nparts,domain_kdtree,thr(1),nmax(1));</span>
+0067     <span class="comment">%% but if we to generate plots by gathering timings for multiple values of</span>
+0068     <span class="comment">%% thr/nmax, we send these in as vectors and use the for-for loop below</span>
+0069     cn = 0;
+0070     bs  = single([model_all.submodels.svm_b]);
+0071     
+0072     <span class="keyword">for</span> id = 1:length(nmax)
+0073         <span class="keyword">for</span> k = 1:length(thrs)
+0074             tic;
+0075             [i,v,tr]  = mex_traverse(root_trees,part_trees,nparts,domain_kdtree,thrs(k),nmax(id),<span class="keyword">...</span>
+0076                 1,pyra.featp,pyra.padx+1,pyra.pady+1,model_all.w_root,model_all.w_part,bs);
+0077             cn = cn + 1;
+0078             times_c{f_ind}(2+cn) = toc;
+0079             <span class="keyword">if</span> nargout&gt;1,
+0080                 scales = pyra.scales(interval+1:end);
+0081                 nobjs  = length(submodels)/6;
+0082                 [dets{f_ind,cn},boxes{f_ind,cn},is] = <a href="sol2boxes.html" class="code" title="function [dets,boxes,is] = sol2boxes(i,v,submodels,scales,nobjs,root_trees,part_trees,nflip)">sol2boxes</a>(i,v,submodels,scales,nobjs,root_trees,part_trees);
+0083             <span class="keyword">end</span>
+0084         <span class="keyword">end</span>
+0085     <span class="keyword">end</span>
+0086     scales  = [];
+0087     nobjs   = [];
+0088 <span class="keyword">end</span>
+0089 
+0090 <span class="keyword">if</span> (length(nmax)*length(thrs)==1)&amp;(nargout&gt;1)
+0091     dets = dets{1,1};
+0092     boxes = boxes{1,1};
+0093 <span class="keyword">end</span>
+0094 <span class="comment">%scales          = pyra.scales(interval+1:end);</span>
+0095 <span class="comment">%nobjs           = length(models_cell);</span>
+0096 <span class="comment">%[dets,boxes,is] = sol2boxes(i,v,submodels,scales,nobjs,root_trees,part_trees);</span></pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:01:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

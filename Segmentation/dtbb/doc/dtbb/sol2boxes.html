@@ -1,0 +1,138 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of sol2boxes</title>
+  <meta name="keywords" content="sol2boxes">
+  <meta name="description" content="% turn the outputs of branch and bound into original DPM format">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; sol2boxes.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>sol2boxes
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>% turn the outputs of branch and bound into original DPM format</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [dets,boxes,is] = sol2boxes(i,v,submodels,scales,nobjs,root_trees,part_trees,nflip) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">% turn the outputs of branch and bound into original DPM format
+
+ Copyright (C) 2012 Iasonas Kokkinos
+ available under the terms of the GNU GPLv2</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="../dtbb/util/iseven.html" class="code" title="function res = iseven(inp);">iseven</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="dtbb.html" class="code" title="function [dets,boxes,is,times,tr,domain_kdtree] = dtbb(im,object_model,thr,nmax,fct_err)">dtbb</a>	[dets,boxes,is,times,tr,domain_kdtree] = dtbb(im,object_model,thr,nmax,fct_err)</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function [dets, boxes] = turn_to_detections(i,v,scls,submodels,root_trees,part_trees,nflip)</a></li></ul>
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [dets,boxes,is] = sol2boxes(i,v,submodels,scales,nobjs,root_trees,part_trees,nflip)</a>
+0002 <span class="comment">%% turn the outputs of branch and bound into original DPM format</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Copyright (C) 2012 Iasonas Kokkinos</span>
+0005 <span class="comment">% available under the terms of the GNU GPLv2</span>
+0006 
+0007 object_ids  = [submodels(i(:,end-1)).md];
+0008 objs        = unique(object_ids);
+0009 <span class="keyword">if</span> nargin&lt;nargin(mfilename),
+0010     nflip = 2;
+0011 <span class="keyword">end</span>
+0012 dets  = cell(1,nobjs);
+0013 boxes = cell(1,nobjs);
+0014 is    = cell(1,nobjs);
+0015 scls    = single(1./scales);   <span class="comment">% box scaling factor</span>
+0016 dets = [];
+0017 boxes = [];
+0018 <span class="keyword">for</span> k=1:length(objs),   <span class="comment">%% loop over object categories</span>
+0019     obj_id      = objs(k);
+0020     <span class="comment">%% find i's for current object categroy</span>
+0021     idswt       = find(object_ids==obj_id);
+0022     iwt         = i(idswt,:);    
+0023     vwt         = v(idswt);
+0024     [srt,idx]   = sort(vwt,<span class="string">'descend'</span>);
+0025     [detsn, boxesn] = <a href="#_sub1" class="code" title="subfunction [dets, boxes] = turn_to_detections(i,v,scls,submodels,root_trees,part_trees,nflip)">turn_to_detections</a>(iwt(idx,:),vwt(idx),scls,submodels,root_trees,part_trees,nflip);
+0026     
+0027     is{obj_id} = iwt(idx,:);
+0028     dets = [dets;detsn];
+0029     boxes = [boxes;boxesn];
+0030 <span class="keyword">end</span>
+0031 
+0032 <a name="_sub1" href="#_subfunctions" class="code">function [dets, boxes] = turn_to_detections(i,v,scls,submodels,root_trees,part_trees,nflip)</a>
+0033 <span class="comment">% turns BB detections into  boxes similar to the ones returned by the original DPM code</span>
+0034 
+0035 nsol = length(v);
+0036 nmax = submodels(1).nmax;
+0037 dets = zeros(nsol,6);
+0038 <span class="keyword">if</span> nsol&gt;1e3
+0039     disp(<span class="string">'something must be wrong'</span>);
+0040     dets  = [];
+0041     boxes = [];
+0042     keep  = 1:nsol;
+0043     <span class="keyword">return</span>;
+0044 <span class="keyword">end</span>
+0045 
+0046 <span class="keyword">for</span> sl = [1:nsol],
+0047     scl         = i(sl,end-2);
+0048     mxt         = mod(i(sl,end-1)-1,6)+1;
+0049     idtree      = i(sl,end-1);
+0050     prt_ids     = i(sl,2:end-3);
+0051     sclp        = 8*scls(scl);
+0052     <span class="keyword">for</span> prt = 1:length(prt_ids),
+0053         pid = prt_ids(prt);
+0054         <span class="keyword">if</span> prt==1,
+0055             center                 = root_trees{scl}.centers(:,pid);
+0056             locations_parts(:,prt) = sclp*center;
+0057             offset = 0;
+0058         <span class="keyword">else</span>
+0059             center =  part_trees{scl}.centers(:,pid);
+0060             locations_parts(:,prt)   = sclp*center; <span class="comment">%(messages{prt}.centers(:,pid)) % - relations(prt).offset');</span>
+0061             <span class="keyword">if</span> prt==2,
+0062                 offset = (ceil(mxt/2)-1)*(length(prt_ids)-1)*4*nflip;
+0063                 <span class="keyword">if</span> <a href="../dtbb/util/iseven.html" class="code" title="function res = iseven(inp);">iseven</a>(mxt),
+0064                     offset = offset + 4;
+0065                 <span class="keyword">end</span>
+0066             <span class="keyword">else</span>
+0067                 offset = offset + 4*(nflip==2);
+0068             <span class="keyword">end</span>
+0069         <span class="keyword">end</span>
+0070         lc  = locations_parts(:,prt);
+0071         <span class="keyword">if</span> prt==1,
+0072             sb = submodels(idtree).sw;
+0073             bx  = [lc(1)+1,lc(2)+1,lc(1) + sb(2)*sclp,   lc(2) + sb(1)*sclp];
+0074             dets(sl,:) = [bx,mxt,v(sl)];
+0075         <span class="keyword">else</span>
+0076             bx =  [lc(1)+1,lc(2)+1,lc(1) + 3*sclp,       lc(2) + 3*sclp];
+0077         <span class="keyword">end</span>
+0078         idxs =  offset + submodels(idtree).idx_box{prt};
+0079         boxes(sl,idxs) = bx;
+0080     <span class="keyword">end</span>
+0081     boxes(sl,nmax+1) = mxt;
+0082     boxes(sl,nmax+2) = v(sl);
+0083 <span class="keyword">end</span>
+0084 <span class="comment">%ds          = dist(i(:,[2,11,12],i(:,[2,11,12])'));</span>
+0085 <span class="comment">%mtrx = triu(ds,1) + (triu(ds,1)==0);</span>
+0086 
+0087</pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:11:51 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

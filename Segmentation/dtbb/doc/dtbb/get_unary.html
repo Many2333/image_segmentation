@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_unary</title>
+  <meta name="keywords" content="get_unary">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; get_unary.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_unary
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">
+ Copyright (C) 2012 Iasonas Kokkinos
+ available under the terms of the GNU GPLv2</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="fast_lookup_call.html" class="code" title="function [inpr,dst]  =fast_lookup_call(feat,t,Nv,Nh,h_s,h_e,v_s,v_e,d,e,Err)">fast_lookup_call</a>	do_fast = exist('Err');</li><li><a href="get_domain.html" class="code" title="function [h_s,h_e,v_s,v_e,grfh,grfv,ng,offset] = get_domain(pyra,feat,sz_filter)">get_domain</a>	</li><li><a href="get_domain_pts.html" class="code" title="function [grh,grv,sz0,sz2,idx] = get_domain_pts(h_s,h_e,v_s,v_e,feat);">get_domain_pts</a>	</li><li><a href="getfeats.html" class="code" title="function [blocks]  = getfeats(feats,idxs,grfh,grfv)">getfeats</a>	blocks  = getfeats(feats,idxs,grfh,grfv);</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="unary_wrapper.html" class="code" title="function [part_trees,root_trees,domain_kdtree,bs,times] = unary_wrapper(model,levels_wt,pyra,doa,interval,times,fct_err)">unary_wrapper</a>	</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function [blocks]  = getfeats(feats,idxs,grfh,grfv)</a></li></ul>
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)</a>
+0002 <span class="comment">%</span>
+0003 <span class="comment">% Copyright (C) 2012 Iasonas Kokkinos</span>
+0004 <span class="comment">% available under the terms of the GNU GPLv2</span>
+0005 
+0006 
+0007 get_kdtree  = exist(<span class="string">'bw'</span>,<span class="string">'var'</span>);
+0008 
+0009 <span class="comment">% doa: do approximation</span>
+0010 <span class="keyword">if</span> ~exist(<span class="string">'doa'</span>,<span class="string">'var'</span>),
+0011     doa = 0;
+0012 <span class="keyword">end</span>
+0013 is_root = (exist(<span class="string">'bs'</span>,<span class="string">'var'</span>))&amp;&amp;(~isempty(bs));
+0014 
+0015 <span class="comment">%% get image features</span>
+0016 <span class="keyword">if</span> doa
+0017     feat = pyra.i{level};
+0018     d    = pyra.d{level};
+0019 <span class="keyword">else</span>
+0020     feat = pyra.feat{level};
+0021 <span class="keyword">end</span>
+0022 
+0023 <span class="comment">%% determine area of operation</span>
+0024 <span class="comment">%% h_s,h_e,v_s,v_e: pyramid coordinates of the area being processed</span>
+0025 <span class="comment">%% grh,grv        : grid of points within it.</span>
+0026 <span class="comment">%% ng             : turns pyramid into image coordinates (discounts padding effects)</span>
+0027 <span class="comment">%% sz0            : dimensions of the pyramid domain being processed</span>
+0028 <span class="comment">%% sz2:           : as above, but clipped to the closest power of two.</span>
+0029 
+0030 [h_s,h_e,v_s,v_e,grfh,grfv,ng] = <a href="get_domain.html" class="code" title="function [h_s,h_e,v_s,v_e,grfh,grfv,ng,offset] = get_domain(pyra,feat,sz_filter)">get_domain</a>(pyra,feat,sz_filter);
+0031 [grh,grv,sz0,sz2,idx]          = <a href="get_domain_pts.html" class="code" title="function [grh,grv,sz0,sz2,idx] = get_domain_pts(h_s,h_e,v_s,v_e,feat);">get_domain_pts</a>(h_s,h_e,v_s,v_e,feat);
+0032 
+0033 tidx = tic;
+0034 <span class="keyword">if</span> doa,
+0035     inpr  = <a href="fast_lookup_call.html" class="code" title="function [inpr,dst]  =fast_lookup_call(feat,t,Nv,Nh,h_s,h_e,v_s,v_e,d,e,Err)">fast_lookup_call</a>(uint8(feat),lookup_table,sz_filter(1),sz_filter(2),h_s,h_e,v_s,v_e,[],[],[]);
+0036 <span class="keyword">else</span>
+0037     inpr  = (<a href="getfeats.html" class="code" title="function [blocks]  = getfeats(feats,idxs,grfh,grfv)">getfeats</a>(feat,idx,grfh,grfv)*t)';
+0038 <span class="keyword">end</span>
+0039 
+0040 grh0 = grh; grv0 = grv; 
+0041 <span class="comment">% construct KD-tree using image coordinates (so as to discount pyramid</span>
+0042 <span class="comment">% effects)</span>
+0043 <span class="comment">% turn pyramid coordinates into image coordinates (shift backwards)</span>
+0044 <span class="comment">% (padx+1, pady+1) will become (0,0)</span>
+0045 grh         = grh + ng(1);
+0046 grv         = grv + ng(2);
+0047 
+0048 scf         = 1 + (~is_root);  <span class="comment">%spacing of points: 1 for low res, 2 for high-res points</span>
+0049 
+0050 <span class="comment">% Indicate where (grh=1,grv=1) should get mapped to.</span>
+0051 ng          = ng + [h_s,v_s]   -1;
+0052 
+0053 <span class="keyword">if</span> ~get_kdtree,
+0054     kd_struct = []; p = inpr;
+0055     <span class="keyword">return</span>; 
+0056 <span class="keyword">end</span>
+0057 
+0058 <span class="keyword">if</span> is_root,
+0059     <span class="keyword">for</span> k=1:length(bs),
+0060         inpr(k,:) = inpr(k,:) + bs(k);
+0061     <span class="keyword">end</span>
+0062 <span class="keyword">end</span>
+0063 <span class="keyword">if</span> doa,
+0064     derr        = nr*(<a href="getfeats.html" class="code" title="function [blocks]  = getfeats(feats,idxs,grfh,grfv)">getfeats</a>(d,idx,grfh,grfv))';
+0065     slack       = sqrt(derr);
+0066     inprd       = inpr - fct_err*slack;
+0067     inpr        = inpr + fct_err*slack;
+0068     p   = cat(1,inpr,inprd,inprd);
+0069     NR  = 3;
+0070 <span class="keyword">else</span>
+0071     p   = cat(1,inpr,inpr);
+0072     NR  = 2;
+0073 <span class="keyword">end</span>
+0074 times(1) = toc(tidx);
+0075 
+0076 times_kd = tic;
+0077 kd_struct   = mex_multitree([grh/scf;grv/scf],p,offsets,bw,sz0,sz2,NR,scf,ng(1),ng(2));
+0078 times(2) = toc(tidx);
+0079 
+0080 <a name="_sub1" href="#_subfunctions" class="code">function [blocks]  = getfeats(feats,idxs,grfh,grfv)</a>
+0081 <span class="comment">%blocks  = getfeats(feats,idxs,grfh,grfv);</span>
+0082 <span class="comment">%</span>
+0083 <span class="comment">%% crops the hog cells used for convolution.</span>
+0084 <span class="comment">%</span>
+0085 <span class="comment">%% idx: vector of image indexes</span>
+0086 <span class="comment">%% fil_u.grfh: vector of horizontal offsets used for convolution</span>
+0087 <span class="comment">%% fil_u.grfv: vector of vertical   offsets used for convolution</span>
+0088 
+0089 [sv(1),sv(2),sv(3)] = size(feats);
+0090 nun             = length(idxs);
+0091 
+0092 <span class="comment">%% compute the (image-dependent) offsets needed to crop cells :</span>
+0093 <span class="comment">%% (horizontal, vertical) offset -&gt; index offset</span>
+0094 offsets         = uint16(grfh*sv(1)          + grfv);
+0095 idx_r           = repmat(idxs',[1,length(offsets)]) + repmat(offsets,[nun,1]);
+0096 feat_reshaped   = single(reshape(feats,[sv(1)*sv(2),sv(3)]));
+0097 
+0098 nels            = numel(grfh)*sv(3);
+0099 blocks          = reshape(feat_reshaped(idx_r,:),[nun,nels]);</pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:11:51 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

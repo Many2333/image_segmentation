@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_domain</title>
+  <meta name="keywords" content="get_domain">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; get_domain.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_domain
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [h_s,h_e,v_s,v_e,grfh,grfv,ng,offset] = get_domain(pyra,feat,sz_filter) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="../dtbb/util/my_meshgrid.html" class="code" title="function [xx,yy,s] = my_meshgrid(x,y)">my_meshgrid</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="get_unary.html" class="code" title="function [kd_struct,times,grh,grv,p,sz0,sz2,ng,grh0,grv0] = get_unary(pyra,level,t,sz_filter,bw,offsets,bs,doa,lookup_table,nr,fct_err)">get_unary</a>	</li><li><a href="imgdetect_csc_lu.html" class="code" title="function [t,dets,boxes] = imgdetect_csc_lu(object_model,thrs,fct_err,pyra)">imgdetect_csc_lu</a>	</li></ul>
+<!-- crossreference -->
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [h_s,h_e,v_s,v_e,grfh,grfv,ng,offset] = get_domain(pyra,feat,sz_filter) </a>
+0002 
+0003 padx = pyra.padx;
+0004 pady = pyra.pady;
+0005 
+0006 sfx  = sz_filter(2);
+0007 sfy  = sz_filter(1);
+0008 
+0009 [szv,szh,nd] = size(feat);
+0010 <span class="comment">%sz_im(1)     = szv - 2*pady;   %% vertical</span>
+0011 <span class="comment">%sz_im(2)     = szh - 2*padx;   %% horizontal</span>
+0012 
+0013 <span class="comment">%% IMAGE pixel (1,1) is at PYRAMID pixel (padx+1,pady+1)</span>
+0014 <span class="comment">%% to allow for partially occluded parts, DPMs start evaluating score</span>
+0015 <span class="comment">%% at image pixel (-smy, -smx),</span>
+0016 <span class="comment">%% so we need to start sampling at pady-smy , padx - smx</span>
+0017 
+0018 <span class="keyword">if</span> 0, <span class="comment">%((sfx==6)&amp;&amp;(sfy==6))</span>
+0019    <span class="comment">%h_s = padx;</span>
+0020   <span class="comment">%  h_s = padx - sfx      + 3;</span>
+0021   <span class="comment">%  h_e = padx + sz_im(2) + 1;</span>
+0022   <span class="comment">%  v_s = pady - sfy      + 3;</span>
+0023   <span class="comment">%  v_e = pady + sz_im(1) + 1;</span>
+0024   <span class="comment">%  h_s = padx  + 1;</span>
+0025   <span class="comment">%  h_e = szh  -sfx + 1; % -1 - sfx;</span>
+0026   <span class="comment">%  v_s = pady  + 1;</span>
+0027   <span class="comment">%  v_e = szv  -sfy + 1; % -1 - sfy;</span>
+0028 <span class="keyword">else</span>
+0029     h_s = 1; <span class="comment">%padx - sfx      + 1;</span>
+0030     h_e = szh -sfx + 1; <span class="comment">% -1 - sfx;</span>
+0031     v_s = 1; <span class="comment">%pady - sfy      + 1;</span>
+0032     v_e = szv -sfy + 1; <span class="comment">% -1 - sfy;</span>
+0033 <span class="keyword">end</span>
+0034 
+0035 <span class="keyword">if</span> 0, <span class="comment">% ~((sfx==6)&amp;&amp;(sfy==6)),</span>
+0036     h_s = padx - 2;
+0037     v_s = pady - 2;
+0038 <span class="keyword">end</span>
+0039 
+0040 offset     = [v_s,h_s]  - 1;        <span class="comment">%% used only for demo_0 script to bring unary scores into alignment</span>
+0041 ng         = -[padx+1,pady+1];      <span class="comment">%% adding this to PYRAMID coordinates turns into c-style IMAGE coordinates</span>
+0042 
+0043 <span class="comment">% 2) horizontal/vertical offsets for template blocks</span>
+0044 [grfh,grfv] = <a href="../dtbb/util/my_meshgrid.html" class="code" title="function [xx,yy,s] = my_meshgrid(x,y)">my_meshgrid</a>(0:sfx-1,0:sfy-1);</pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:11:51 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

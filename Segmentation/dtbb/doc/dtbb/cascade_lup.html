@@ -1,0 +1,77 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of cascade_lup</title>
+  <meta name="keywords" content="cascade_lup">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../menu.html">Home</a> &gt;  <a href="menu.html">dtbb</a> &gt; cascade_lup.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../menu.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>cascade_lup
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [times_c,dets,boxes] = cascade_lup(im,object_model,thrs,f_errs) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="imgdetect_csc_lu.html" class="code" title="function [t,dets,boxes] = imgdetect_csc_lu(object_model,thrs,fct_err,pyra)">imgdetect_csc_lu</a>	</li><li><a href="quantizepyramid.html" class="code" title="function [pyra] = quantizepyramid(pyra,vocab,do_approx,nrm_hog)">quantizepyramid</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="demo_all.html" class="code" title="">demo_all</a>	maxNumCompThreads(1);</li></ul>
+<!-- crossreference -->
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [times_c,dets,boxes] = cascade_lup(im,object_model,thrs,f_errs)</a>
+0002 tic;
+0003 pyra            = featpyramid(im, object_model.model);
+0004 pyra            = <a href="quantizepyramid.html" class="code" title="function [pyra] = quantizepyramid(pyra,vocab,do_approx,nrm_hog)">quantizepyramid</a>(pyra,object_model.vocab,0,0);
+0005 times(1)        = toc;
+0006 thr_cascade     = object_model.thrsc;
+0007 
+0008 <span class="keyword">if</span> (length(f_errs)*(length(thrs)))==1
+0009     t_ind       = find(object_model.thresh ==thrs);
+0010     thrs_in     = thr_cascade{t_ind};
+0011     [times_csc,dets,boxes] = <a href="imgdetect_csc_lu.html" class="code" title="function [t,dets,boxes] = imgdetect_csc_lu(object_model,thrs,fct_err,pyra)">imgdetect_csc_lu</a>(object_model,thrs_in,f_errs,pyra);
+0012     times_c = [times,times_csc];
+0013     <span class="keyword">return</span>
+0014 <span class="keyword">end</span>
+0015 
+0016 <span class="comment">%% some ugly code for the case when multiple thresholds and error factors are used</span>
+0017 <span class="comment">%% (in that case we avoid calling the pyramid code multiple times, and manage to get</span>
+0018 <span class="comment">%% our plots before the deadline)</span>
+0019 <span class="keyword">for</span> f_ind = 1:length(f_errs)
+0020     times_c{f_ind} = times(1);
+0021     fct_err = f_errs(f_ind);
+0022     <span class="keyword">for</span> ind = 1:length(thrs),
+0023         thr   = thrs(ind);
+0024         t_ind = find(object_model.thresh ==thr);
+0025         thrs_in  = thr_cascade{t_ind};
+0026         [dets,boxes,times_csc] = <a href="imgdetect_csc_lu.html" class="code" title="function [t,dets,boxes] = imgdetect_csc_lu(object_model,thrs,fct_err,pyra)">imgdetect_csc_lu</a>(object_model,thrs_in,fct_err,pyra);
+0027         dets{f_ind,t_ind}  = d;
+0028         boxes{f_ind,t_ind} = b;
+0029         times_c{f_ind} = [times_c{f_ind},times_csc];
+0030     <span class="keyword">end</span>
+0031 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:11:51 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

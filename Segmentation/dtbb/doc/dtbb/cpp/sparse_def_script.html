@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of sparse_def_script</title>
+  <meta name="keywords" content="sparse_def_script">
+  <meta name="description" content="%">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html &copy; 2003 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../menu.html">Home</a> &gt;  <a href="../menu.html">dtbb</a> &gt; <a href="menu.html">cpp</a> &gt; sparse_def_script.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../menu.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="menu.html">Index for dtbb/cpp&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>sparse_def_script
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>%</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment">%
+% script that generates c++ header for fast lookup-based convolution
+% the filter size is presumed to be 6x6 - this script allows to write the code
+% 1) without a for-loop (faster execution)
+% 2) without writing the same thing 36 times
+%</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="../../dtbb/make_dtbb.html" class="code" title="">make_dtbb</a>	</li></ul>
+<!-- crossreference -->
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">%%</span>
+0002 <span class="comment">%% script that generates c++ header for fast lookup-based convolution</span>
+0003 <span class="comment">%% the filter size is presumed to be 6x6 - this script allows to write the code</span>
+0004 <span class="comment">%% 1) without a for-loop (faster execution)</span>
+0005 <span class="comment">%% 2) without writing the same thing 36 times</span>
+0006 <span class="comment">%%</span>
+0007 
+0008 rt      = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0009 f_out  = fopen(fullfile(rt,<span class="string">'sparse_def.h'</span>),<span class="string">'w'</span>);
+0010 <span class="comment">%fprintf(f_out,'// automatically generated header file for fast lookup-based convolution \\\n');</span>
+0011 <span class="comment">%fprintf(f_out,'// please look into part_def_script.m if you want to modify this header file \\\n');</span>
+0012 
+0013 <span class="comment">%% the offsets of consecutive lookup locations</span>
+0014 fprintf(f_out,<span class="string">'#define setup_codepos_and_offsets \\\n'</span>);
+0015 cnt = 0;
+0016 <span class="keyword">for</span> h = 1:6,
+0017     <span class="keyword">for</span> v = 1:6
+0018         fprintf(f_out,<span class="string">'const int offsets%i =  %i*sv + %i;\\\n'</span>,cnt,h-1,v-1);
+0019         cnt = cnt + 1;
+0020     <span class="keyword">end</span>
+0021 <span class="keyword">end</span>
+0022 <span class="keyword">for</span> cnt = 0:35,
+0023    fprintf(f_out,<span class="string">'const float* values%i  = values_for_models +  %i*Nwords;\\\n'</span>,cnt,cnt);
+0024 <span class="keyword">end</span>
+0025 
+0026 <span class="comment">%% the image locations  from which lookup operations 'tap' codebook + distance entries</span>
+0027  fprintf(f_out,<span class="string">'\n'</span>);
+0028 fprintf(f_out,<span class="string">'#define define_taps \\\n'</span>);
+0029 <span class="keyword">for</span> cnt = 0:35
+0030     fprintf(f_out,<span class="string">'const pidx* tap%i;\\\n'</span>,cnt);
+0031 <span class="keyword">end</span>
+0032 <span class="keyword">for</span> cnt = 0:35
+0033     fprintf(f_out,<span class="string">'const float* dtap%i;\\\n'</span>,cnt);
+0034 <span class="keyword">end</span>
+0035 <span class="keyword">for</span> cnt = 0:35
+0036     fprintf(f_out,<span class="string">'const float ntap%i = nrm_loc[%i];\\\n'</span>,cnt,cnt);
+0037 <span class="keyword">end</span>
+0038 
+0039 <span class="comment">%% slide taps by one</span>
+0040 fprintf(f_out,<span class="string">'\n'</span>);
+0041 fprintf(f_out,<span class="string">'#define update_taps \\\n'</span>);
+0042 <span class="keyword">for</span> cnt = 0:35
+0043    fprintf(f_out,<span class="string">'tap%i = pix_offset + offsets%i;\\\n'</span>,cnt,cnt);
+0044 <span class="keyword">end</span>
+0045 <span class="keyword">for</span> cnt = 0:35
+0046    fprintf(f_out,<span class="string">'dtap%i = dst_offset + offsets%i;\\\n'</span>,cnt,cnt);
+0047 <span class="keyword">end</span>
+0048 fprintf(f_out,<span class="string">'\n'</span>);
+0049 
+0050 <span class="comment">%% add the lookup-based scores</span>
+0051 fprintf(f_out,<span class="string">'#define get_sum \\\n'</span>);
+0052 <span class="keyword">for</span> cnt = 0:34
+0053     fprintf(f_out,<span class="string">'values%i[*(tap%i++)] + '</span>,cnt,cnt);
+0054 <span class="keyword">end</span>
+0055 fprintf(f_out,<span class="string">'values%i[*(tap%i++)]\n'</span>,35,35);
+0056 fprintf(f_out,<span class="string">'\n'</span>);
+0057 fprintf(f_out,<span class="string">'#define get_dst_sum \\\n'</span>);
+0058 <span class="keyword">for</span> cnt = 0:34
+0059     fprintf(f_out,<span class="string">'*(dtap%i++)*ntap%i + '</span>,cnt,cnt);
+0060 <span class="keyword">end</span>
+0061 fprintf(f_out,<span class="string">'*(dtap%i++)*ntap%i\n'</span>,35,35);
+0062 fclose(f_out);
+0063</pre></div>
+<hr><address>Generated on Wed 17-Oct-2012 14:11:51 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/">m2html</a></strong> &copy; 2003</address>
+</body>
+</html>

@@ -1,0 +1,9 @@
+更改cpmc_example.m 16 - 20行：现在使用parpool，并在新建pool之前delete(gcp('nocreate'))
+
+重新下载vlfeats包，并在进入matlab后执行run('%VL_FEATS_ROOT%\toolbox\vl_setup')命令
+
+安装libjpeg.so.62
+
+去掉了csift.m文件中40 - 41行代码的注释，然后将42行fopen的模式改为只读模式
+
+现在代码可以在64位ubuntu下运行了！
