@@ -27,3 +27,15 @@
 *.exe
 *.out
 *.app
+
+# img path
+./VOCdevkit/*
+./BSDS300/*
+./output/*
+./mat/*
+./dtbb/*
+
+# tmp2
+*.tmp2
+
+
